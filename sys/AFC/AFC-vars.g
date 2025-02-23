@@ -15,6 +15,7 @@ global AFC_trigger_input_numbers={0,1,2,3}
 global AFC_buffer_input_numbers={4,5}
 global AFC_hub_input_number=6
 global AFC_unload_input_number=7
+global AFC_number_of_lanes=4
 
 global om_axis_number=3
 
@@ -38,7 +39,7 @@ var hub_switch="SW1" ; This is the hub switch. This will not need editing if usi
 
 ; ########## DO NOT EDIT PAST HERE!!! ################
 
-global AFC_driver_number={{global.AFC_CAN_address+var.driver_number[0]+0.0001},{global.AFC_CAN_address+var.driver_number[1]},{global.AFC_CAN_address+var.driver_number[2]},{global.AFC_CAN_address+var.driver_number[3]}}
+global AFC_driver_number={{global.AFC_CAN_address+var.driver_number[0]+0.0001},{global.AFC_CAN_address+var.driver_number[1]+0.0001},{global.AFC_CAN_address+var.driver_number[2]+0.0001},{global.AFC_CAN_address+var.driver_number[3]+0.0001}}
 global AFC_SLP_pins={{global.AFC_CAN_address^"."^var.SLP_pins[0]},{global.AFC_CAN_address^"."^var.SLP_pins[1]},{global.AFC_CAN_address^"."^var.SLP_pins[2]},{global.AFC_CAN_address^"."^var.SLP_pins[3]}}         ; These are the SLP pins used by the DC motors
 global AFC_DC1_pins={{global.AFC_CAN_address^"."^var.DC1_pins[0]},{global.AFC_CAN_address^"."^var.DC1_pins[1]},{global.AFC_CAN_address^"."^var.DC1_pins[2]},{global.AFC_CAN_address^"."^var.DC1_pins[3]}}         ; These are the DC1 pins used by the DC motors
 global AFC_DC2_pins={{global.AFC_CAN_address^"."^var.DC2_pins[0]},{global.AFC_CAN_address^"."^var.DC2_pins[1]},{global.AFC_CAN_address^"."^var.DC2_pins[2]},{global.AFC_CAN_address^"."^var.DC2_pins[3]}}         ; These are the DC2 pins used by the DC motors
@@ -53,9 +54,12 @@ global AFC_tmp_file = "0:/sys/AFC/AFC-info/tmp.g"
 global AFC_lane_loaded={false,false,false,false}
 global AFC_lane_first_length={0,0,0,0}
 global AFC_lane_total_length={0,0,0,0}
+global AFC_lane_continuous={false,false,false,false}
 
 ; ########## Additional Info ##########
 global additional_length=0
 global AFC_LED_array={0,0,0,0}
+
+global AFC_time=0
 
 global AFC_debug=true

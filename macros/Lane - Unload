@@ -1,39 +1,7 @@
-var lane_number=0
-var first_length=0
-var unload_length=0
+var lane_number = 0
 
 M291 P"Select the lane use to measure the overall length" K{"Lane 0","Lane 1","Lane 2","Lane 3"} S4 J1
 if (input == 0 || input == 1 || input == 2 || input == 3)
     set var.lane_number=input
-    set var.first_length=global.AFC_lane_first_length[{input}]
 
-set var.unload_length=var.first_length+50
-
-M584 P{#move.axes}
-
-M98 P"0:/sys/AFC/Motors/Axis_setup.g" A{var.lane_number}
-
-var total_axis=#move.axes
-
-if {global.AFC_lane_loaded[var.lane_number]}=true
-    M950 J{global.AFC_unload_input_number} C{global.AFC_load_switch[var.lane_number]}
-    G92 's{var.first_length}
-    M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{var.lane_number}
-    M400 
-    G1 's{-var.unload_length} F{global.AFC_retract_speed}
-    M400
-    M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}
-    if sensors.gpIn[global.AFC_unload_input_number].value=0
-        set global.AFC_lane_loaded[{var.lane_number}]=false
-        echo >"0:/sys/AFC/AFC-info/lane_status.g" "; lane status"
-        M98 P"0:/sys/AFC/debug.g" A"Debug 6"
-        echo >>"0:/sys/AFC/AFC-info/lane_status.g" "set global.AFC_lane_loaded = " ^ global.AFC_lane_loaded
-        M98 P"0:/sys/AFC/debug.g" A"Debug 8"
-        M400
-        set global.AFC_LED_array[var.lane_number]=0
-        M98 P"0:/sys/AFC/LEDs.g"
-
-    M950 J{global.AFC_unload_input_number} C"nil"
-    M584 P{var.total_axis-1}
-else
-    M117 "No Filament Loaded to Unload"
+M98 P"0:/sys/AFC/unload.g" A{var.lane_number}

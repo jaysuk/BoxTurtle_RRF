@@ -7,6 +7,12 @@ var lane1_total_length=0
 var lane2_total_length=0
 var lane3_total_length=0
 
+M950 J{global.AFC_hub_input_number} C{global.AFC_hub_switch}
+if sensors.gpIn[global.AFC_hub_input_number].value !=0
+    M291 S2 P"There is filament loaded to the printer through the hub, aborting macro" R"Warning"
+    M950 J{global.AFC_hub_input_number} C"nil"
+    abort
+
 M291 P"Select the lane use to measure the overall length" K{"Lane 0","Lane 1","Lane 2","Lane 3"} S4 J1
 if (input == 0 || input == 1 || input == 2 || input == 3)
     set var.lane_number=input
@@ -50,5 +56,3 @@ M400
 M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}    
 M400 
 M584 P{var.total_axis-1}
-if global.AFC_debug
-    echo 9
