@@ -1,0 +1,15 @@
+var lane_number=0
+
+M291 P"Select the lane to be measured" K{"Lane 0","Lane 1","Lane 2","Lane 3"} S4 J1
+if (input == 0 || input == 1 || input == 2 || input == 3)
+    set var.lane_number=input
+
+set global.AFC_lane_first_length[{var.lane_number}]=0
+M98 P"0:/sys/AFC/debug.g" A"Debug 1"
+echo >"0:/sys/AFC/AFC-info/lane_first_length.g" "; lane first lengths"
+M98 P"0:/sys/AFC/debug.g" A"Debug 2"
+echo >>"0:/sys/AFC/AFC-info/lane_first_length.g" "set global.AFC_lane_first_length = " ^ global.AFC_lane_first_length
+set global.AFC_LED_array[{var.lane_number}]=0
+M98 P"0:/sys/AFC/debug.g" A"Debug 3"
+M98 P"0:/sys/AFC/LEDs.g"
+M98 P"0:/sys/AFC/debug.g" A"Debug 4"
