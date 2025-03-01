@@ -42,6 +42,9 @@ if fileexists("0:/sys/AFC/AFC-info/lane_total_length.g")
     M98 P"0:/sys/AFC/AFC-info/lane_total_length.g"
 if fileexists("0:/sys/AFC/AFC-info/lane_status.g")
     M98 P"0:/sys/AFC/AFC-info/lane_status.g"
+if fileexists("0:/sys/AFC/AFC-info/lane_filament.g")
+    M98 P"0:/sys/AFC/AFC-info/lane_filament.g"
+set global.AFC_lane_filament_type1 = global.AFC_lane_filament_type
     
 ;######## LEDs ##################
 M950 E0 C"119.neopixel1" T2 U4

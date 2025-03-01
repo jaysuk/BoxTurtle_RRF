@@ -1,47 +1,49 @@
 ; param.A - This is the lane number
-; param.B - This determines if the DC motors should run. B1 is no
+; param.B - This determines if the DC motors should run. A value of 1 is yes. No B value or a value of 0 is no
 
-if !exists(param.A)
-    echo "Missing the lane number"
+var lane_number = 0                                                                                         ; This just initialises the variable
+var first_length = 0                                                                                        ; This just initialises the variable
+var unload_length = 0                                                                                       ; This just initialises the variable
+var DC_motor = 0                                                                                            ; This just initialises the variable
+var total_axis = 0                                                                                          ; This just initialises the variable
+
+if !exists(param.A)                                                                                         ; This checks for the existance of param.A as it is needed for this macro to work
+    M118 S"Missing the lane number from this script call"
     abort
 
-var lane_number=param.A
-var first_length=global.AFC_lane_first_length[var.lane_number]
-var unload_length=0
+M118 S{"Lane number being unloaded is "^{param.A}}                                                          ; This message is to confirm the lane being unloaded
 
-if exists(param.B)
-    var DC_motors=param.B
+set var.lane_number = param.A                                                                               ; This sets the variable to param.A
+set var.first_length = global.AFC_lane_first_length[var.lane_number]                                        ; This sets the variable to the measured first length
+set var.unload_length = var.first_length + 50                                                               ; This is to give an extra length during unloading
+
+if exists(param.B)                                                                                          ; This is a check to see if the DC motor is required during unloading
+    set var.DC_motor = param.B                                                                              ; Sets the variable value to the B value. A value of 1 being passed to the macro would mean the DC motor is not required
+
+
+M98 P"0:/sys/AFC/Motors/Axis_setup.g" A{var.lane_number}                                                    ; This is to ensure that the motor used for all moves is set to the correct lane
+M584 P{#move.axes}                                                                                          ; This unhides any hidden axes
+set var.total_axis = #move.axes                                                                             ; This recounts the number of axis and sets it to a variable to be used later
+
+if {global.AFC_lane_loaded[var.lane_number]} = true                                                         ; This checks whether the lane has been marked as being loaded filament. It will not run if it hasn't
+    M950 J{global.AFC_unload_input_number} C{global.AFC_load_switch[var.lane_number]}                       ; This sets the load switch as a GPIO so we can do a sanity check to make sure the filament has been unloaded
+    G92 's{var.unload_length}                                                                               ; This sets the axis position to the unload length, which is 50mm more than the first length
+    if var.DC_motor = 1                                                                                     ; This is the check whether the DC motor is required to run
+        M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{var.lane_number}                                        ; This enables the DC motor in the reseverse direction
+        M400                                                                                                ; This just makes sure the above command runs
+    G1 's0 F{global.AFC_retract_speed}                                                                      ; This is the actual command to retract the filament back on to the spool
+    M400                                                                                                    ; This just makes sure the above command runs
+    M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}                                            ; This ensures the DC motor is off regardless of whether it was commanded to be on
+    M400                                                                                                    ; This just makes sure the above command runs
+    if sensors.gpIn[global.AFC_unload_input_number].value = 0                                               ; This checks to make sure the filament has been unloaded
+        set global.AFC_lane_loaded[{var.lane_number}] = false                                               ; This marks the lane as having no filament loaded
+        echo >"0:/sys/AFC/AFC-info/lane_status.g" " ; lane status"                                          ; This replaces the file on the sd card for storing lane status
+        echo >>"0:/sys/AFC/AFC-info/lane_status.g" "set global.AFC_lane_loaded = " ^ global.AFC_lane_loaded ; This stores the lane status
+        M400                                                                                                ; This just makes sure the above command runs
+        set global.AFC_LED_array[var.lane_number] = 0                                                       ; This sets the neopixel colour for this lane to 0
+        M98 P"0:/sys/AFC/LEDs.g"                                                                            ; This runs the LED macro which sets the lane colour to red and records its status to the SD card
+        M400                                                                                                ; This just makes sure the above command runs
+    M950 J{global.AFC_unload_input_number} C"nil"                                                           ; This frees up the load switch from being used as a GPIO input
+    M584 P{var.total_axis-1}                                                                                ; This hides the axis used for movement
 else
-    var DC_motors=0
-
-set var.unload_length=var.first_length+50
-
-M584 P{#move.axes}
-
-M98 P"0:/sys/AFC/Motors/Axis_setup.g" A{var.lane_number}
-
-var total_axis=#move.axes
-
-if {global.AFC_lane_loaded[var.lane_number]}=true
-    M950 J{global.AFC_unload_input_number} C{global.AFC_load_switch[var.lane_number]}
-    G92 's{var.first_length}
-    if var.DC_motors=1
-        M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{var.lane_number}
-        M400 
-    G1 's{-var.unload_length} F{global.AFC_retract_speed}
-    M400
-    if var.DC_motors=1
-        M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}
-        M400
-    if sensors.gpIn[global.AFC_unload_input_number].value=0
-        set global.AFC_lane_loaded[{var.lane_number}]=false
-        echo >"0:/sys/AFC/AFC-info/lane_status.g" "; lane status"
-        echo >>"0:/sys/AFC/AFC-info/lane_status.g" "set global.AFC_lane_loaded = " ^ global.AFC_lane_loaded
-        M400
-        set global.AFC_LED_array[var.lane_number]=0
-        M98 P"0:/sys/AFC/LEDs.g"
-
-    M950 J{global.AFC_unload_input_number} C"nil"
-    M584 P{var.total_axis-1}
-else
-    M117 "No Filament Loaded to Unload"
+    M118 S{"No Filament Loaded in Lane "^{var.lane_number}^" to Unload"}                                    ; If no filament is recorded as being loaded in the lane, this message will display
