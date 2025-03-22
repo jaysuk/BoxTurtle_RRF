@@ -1,2 +1,2 @@
 if global.AFC_debug
-    echo param.A
+    M118 S{param.A}

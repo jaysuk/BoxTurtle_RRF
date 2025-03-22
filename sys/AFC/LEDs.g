@@ -5,7 +5,7 @@ var red=0
 var blue=0
 var green=0
 
-while iterations < 4
+while iterations < global.AFC_neopixel_settings[2]
     if global.AFC_LED_array[iterations] == 0        ; This check would see if any LEDs should be Red
         set var.red=255
         set var.green=0
@@ -22,10 +22,10 @@ while iterations < 4
         set var.red=255
         set var.green=255
         set var.blue=255
-    if iterations < 3
-        M150 R{var.red} U{var.green} B{var.blue} W0 F1
+    if iterations < (global.AFC_neopixel_settings[2] - 1)
+        M150 E{global.AFC_neopixel_settings[0]} R{var.red} U{var.green} B{var.blue} W0 F1
     else
-        M150 R{var.red} U{var.green} B{var.blue} W0 F0
+        M150 E{global.AFC_neopixel_settings[0]} R{var.red} U{var.green} B{var.blue} W0 F0
 
 if fileexists("0:/sys/AFC/AFC-info/LEDs.g")
     M472 P"0:/sys/AFC/AFC-info/LEDs.g"

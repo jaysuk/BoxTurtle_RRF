@@ -30,7 +30,7 @@ if param.A = "R"
     M950 P1 C{var.DC1_pin}
     M950 P2 C{var.DC2_pin}
     M42 P0 S1
-    M42 P1 S0.75
+    M42 P1 S1
 
 if param.A = "O"
     M42 P0 S0
