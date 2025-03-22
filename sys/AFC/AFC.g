@@ -1,10 +1,10 @@
 M98 P"0:/sys/AFC/AFC-vars.g"
 
 ;######## Motors ################
-M569 P119.0 S{global.AFC_stepper_direction[0]}
-M569 P119.1 S{global.AFC_stepper_direction[1]}
-M569 P119.2 S{global.AFC_stepper_direction[2]}
-M569 P119.3 S{global.AFC_stepper_direction[3]}
+M569 P{global.AFC_driver_number[0]} S{global.AFC_stepper_direction[0]}
+M569 P{global.AFC_driver_number[1]} S{global.AFC_stepper_direction[1]}
+M569 P{global.AFC_driver_number[2]} S{global.AFC_stepper_direction[2]}
+M569 P{global.AFC_driver_number[3]} S{global.AFC_stepper_direction[3]}
 
 global max_axes=#move.axes
 
