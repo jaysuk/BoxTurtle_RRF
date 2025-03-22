@@ -66,3 +66,7 @@ To the change filament g-code add the following
 M98 P"0:/sys/AFC/set_temp_global.g" A[next_extruder] B[new_filament_temp]
 T[next_extruder]
 ```
+
+## BtnCmd
+
+I have also included a basic BtnCmd setup for the AFC that I will be improving when I get time.
