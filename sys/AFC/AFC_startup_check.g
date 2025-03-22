@@ -23,6 +23,7 @@ if !var.hub_empty
         if input == 0
             set var.home_safe = true
         if var.home_safe
+            G28
             M568 P{var.lane_number} S220 A2
             M98 P"0:/sys/AFC/tfree.g" A{var.lane_number} B1
             M400
