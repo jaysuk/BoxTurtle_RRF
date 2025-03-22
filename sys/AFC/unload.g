@@ -14,8 +14,8 @@ if !exists(param.A)                                                             
 M118 S{"Lane number being unloaded is "^{param.A}}                                                          ; This message is to confirm the lane being unloaded
 
 set var.lane_number = param.A                                                                               ; This sets the variable to param.A
-set var.first_length = global.AFC_lane_first_length[var.lane_number]                                        ; This sets the variable to the measured first length
-set var.unload_length = var.first_length + 50                                                               ; This is to give an extra length during unloading
+set var.first_length = global.AFC_lane_total_length[var.lane_number]                                        ; This sets the variable to the measured first length
+set var.unload_length = var.first_length                                                               ; This is to give an extra length during unloading
 
 if exists(param.B)                                                                                          ; This is a check to see if the DC motor is required during unloading
     set var.DC_motor = param.B                                                                              ; Sets the variable value to the B value. A value of 1 being passed to the macro would mean the DC motor is not required
@@ -31,7 +31,7 @@ if {global.AFC_lane_loaded[var.lane_number]} = true                             
     if var.DC_motor = 1                                                                                     ; This is the check whether the DC motor is required to run
         M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{var.lane_number}                                        ; This enables the DC motor in the reseverse direction
         M400                                                                                                ; This just makes sure the above command runs
-    G1 's0 F{global.AFC_retract_speed}                                                                      ; This is the actual command to retract the filament back on to the spool
+    G1 's0 F{global.AFC_load_retract_speed[1]*60}                                                                      ; This is the actual command to retract the filament back on to the spool
     M400                                                                                                    ; This just makes sure the above command runs
     M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}                                            ; This ensures the DC motor is off regardless of whether it was commanded to be on
     M400                                                                                                    ; This just makes sure the above command runs

@@ -1,0 +1,1 @@
+set global.AFC_extruder_temp[param.A] = param.B

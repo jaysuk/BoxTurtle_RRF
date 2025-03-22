@@ -7,16 +7,16 @@ M98 P"0:/sys/AFC/debug.g" A"AFC_Kick: Starting Filament Kick"
 
 M98 P"0:/sys/AFC/debug.g" A"AFC_Kick: Move to Start Position"
 
-G1 Z{global.AFC_kick[2]} F{global.AFC_speed[1]*60}
-G1 X{global.AFC_kick[0]} Y{global.AFC_kick[1]} F{global.AFC_speed[0]*60}
+G1 Z{global.AFC_kick[2]} F{global.AFC_travel_speed[1]*60}
+G1 X{global.AFC_kick[0]} Y{global.AFC_kick[1]} F{global.AFC_travel_speed[0]*60}
 
 M98 P"0:/sys/AFC/debug.g" A"AFC_Kick: Drop Z For Kick Move"
 
 if global.AFC_kick[2] > 0
-    G1 Z{global.AFC_kick[2]} F{global.AFC_speed[1]*60}
+    G1 Z{global.AFC_kick[2]} F{global.AFC_travel_speed[1]*60}
 else
     M118 S"AFC-KICK: kick_z value to low. Please adjust in AFC_Vars.g. Defaulting to 0.5mm z-height"
-    G1 Z0.5 F{global.AFC_speed[1]*60}
+    G1 Z0.5 F{global.AFC_travel_speed[1]*60}
 
 if global.AFC_kick[6] == "left"
     set var.location_factor = {-1,0}
@@ -42,4 +42,4 @@ elif global.AFC_kick[6] == "front" || global.AFC_kick[6] == "back"
 else
     M118 S"Error in kick movement. Check the directions in your AFC_Vars.g file!"
 
-G1 Z{global.AFC_kick[8]} F{global.AFC_speed[1]*60}
+G1 Z{global.AFC_kick[8]} F{global.AFC_travel_speed[1]*60}
