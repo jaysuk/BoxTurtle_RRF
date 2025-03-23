@@ -81,15 +81,23 @@ set global.AFC_debug = false
 ; This sets which features of the load/unload process you want to enable
 ; They are in the order of
 ; brush
+var brush = false
 ; cut
+var cut = false
 ; kick
+var kick = false
 ; park
+var park = false
 ; poop
+var poop = false
 ; purge
+var purge = false
 ; use measure lengths for load/unload
+var meas = false
 ; carry out a startup check
+var start = false
 ; use the DC motor to rewind the filament
-global AFC_features = {false, false, false, false, false, false, false, false, false}
+var dc = false
 
 ; This is the Object Model Number of the axis we use for loading the filament. 
 ; If you just have X, Y and Z then this should be set to 2. Each additional axis you've added will increment this number
@@ -327,3 +335,5 @@ set global.AFC_load_switch = {{global.AFC_CAN_address^"."^var.load_switch[0]},{g
 set global.TN_switches = {{global.AFC_CAN_address^"."^var.turtleneck_switches[0]},{global.AFC_CAN_address^"."^var.turtleneck_switches[1]}}                                ; These are in the order of Advance and Trailing
 set global.AFC_hub_switch = {"^"^global.AFC_CAN_address^"."^var.hub_switch}
 set global.AFC_neopixel_pin = {global.AFC_CAN_address^"."^var.neopixel_pin}
+
+set global.AFC_features={var.brush,var.cut,var.kick,var.park,var.poop,var.purge,var.meas,var.start,var.dc}
