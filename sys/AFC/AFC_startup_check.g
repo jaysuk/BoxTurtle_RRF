@@ -2,6 +2,7 @@ var hub_empty = false
 var lane_number = 0
 var lane_in_extruder = false
 var home_safe = false
+var total_axis = #move.axes
 
 M950 J{global.AFC_hub_input_number} C{global.AFC_hub_switch}
 M400
@@ -99,4 +100,6 @@ if var.hub_empty
                 M98 P"0:/macros/Lane - Mark Unloaded" A{iterations}
             M574 's1 P"nil" S1
             M400   
+            ; This hides the axes again
+            M584 P{var.total_axis-1}
 
