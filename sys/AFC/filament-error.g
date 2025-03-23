@@ -13,7 +13,10 @@ var lane_number = param.A
 var choice=0
 var choice_lane=0
 
-M98 P"0:/sys/AFC/tfree.g" A{var.lane_number] B1
+if global.AFC_features[8]
+    M98 P"0:/sys/AFC/tfree.g" A{var.lane_number] B1
+else
+    M98 P"0:/sys/AFC/tfree.g" A{var.lane_number] B0
 
 M98 P"0:/sys/AFC/unload.g" A{var.lane_number] B1
 

@@ -79,8 +79,17 @@ set global.AFC_travel_speed = {150, 5}
 set global.AFC_debug = false
 
 ; This sets which features of the load/unload process you want to enable
-; They are in the order of brush, cut, kick, park, poop, purge, use measure lengths for load/unload and carry out a startup check.
-set global.AFC_features = {false, false, false, false, false, false, false, false}
+; They are in the order of
+; brush
+; cut
+; kick
+; park
+; poop
+; purge
+; use measure lengths for load/unload
+; carry out a startup check
+; use the DC motor to rewind the filament
+global AFC_features = {false, false, false, false, false, false, false, false, false}
 
 ; This is the Object Model Number of the axis we use for loading the filament. 
 ; If you just have X, Y and Z then this should be set to 2. Each additional axis you've added will increment this number

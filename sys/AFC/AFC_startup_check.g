@@ -27,12 +27,18 @@ if !var.hub_empty
         if var.home_safe
             G28
             M568 P{var.lane_number} S220 A2
-            M98 P"0:/sys/AFC/tfree.g" A{var.lane_number} B1
+            if global.AFC_features[8]
+                M98 P"0:/sys/AFC/tfree.g" A{var.lane_number} B1
+            else
+                M98 P"0:/sys/AFC/tfree.g" A{var.lane_number} B0
             M400
             M568 P{var.lane_number} A0
         elif !var.home_safe
             M568 P{var.lane_number} S220 A2
-            M98 P"0:/sys/AFC/tfree.g" A{var.lane_number} B1 C1
+            if global.AFC_features[8]
+                M98 P"0:/sys/AFC/tfree.g" A{var.lane_number} B1 C1
+            else
+                M98 P"0:/sys/AFC/tfree.g" A{var.lane_number} B0 C1
             M400
             M568 P{var.lane_number} A0
 
