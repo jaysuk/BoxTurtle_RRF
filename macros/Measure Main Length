@@ -26,14 +26,14 @@ M98 P"0:/sys/AFC/Motors/Axis_setup.g" A{var.lane_number}
 
 var total_axis=#move.axes
 
-M574 's1 S1 P{global.TN_switches[0]}
+M574 'l1 S1 P{global.TN_switches[0]}
 M400
-G92 's{var.first_length}
+G92 'l{var.first_length}
 echo var.first_length
 M400
-G1 H4 's20000 F{global.AFC_load_retract_speed[0]*60}
+G1 H4 'l20000 F{global.AFC_load_retract_speed[0]*60}
 G91
-G1 H2 's{-global.AFC_tn_retract_distance} F{global.AFC_load_retract_speed[1]*60}
+G1 H2 'l{-global.AFC_tn_retract_distance} F{global.AFC_load_retract_speed[1]*60}
 G90
 M400
 set var.total_length=move.axes[{global.om_axis_number}].machinePosition
@@ -48,10 +48,10 @@ set global.AFC_lane_total_length[2]=var.lane2_total_length
 set global.AFC_lane_total_length[3]=var.lane3_total_length
 echo >"0:/sys/AFC/AFC-info/lane_total_length.g" "; lane first lengths"
 echo >>"0:/sys/AFC/AFC-info/lane_total_length.g" "set global.AFC_lane_total_length = " ^ global.AFC_lane_total_length
-M574 's1 S1 P"nil"
+M574 'l1 S1 P"nil"
 M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{var.lane_number}
 M400   
-G1 's{global.AFC_lane_first_length[{var.lane_number}]} F{global.AFC_load_retract_speed[1]*60}
+G1 'l{global.AFC_lane_first_length[{var.lane_number}]} F{global.AFC_load_retract_speed[1]*60}
 M400
 M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}    
 M400 

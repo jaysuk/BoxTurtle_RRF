@@ -27,11 +27,11 @@ set var.total_axis = #move.axes                                                 
 
 if {global.AFC_lane_loaded[var.lane_number]} = true                                                         ; This checks whether the lane has been marked as being loaded filament. It will not run if it hasn't
     M950 J{global.AFC_unload_input_number} C{global.AFC_load_switch[var.lane_number]}                       ; This sets the load switch as a GPIO so we can do a sanity check to make sure the filament has been unloaded
-    G92 's{var.unload_length}                                                                               ; This sets the axis position to the unload length, which is 50mm more than the first length
+    G92 'l{var.unload_length}                                                                               ; This sets the axis position to the unload length, which is 50mm more than the first length
     if var.DC_motor = 1                                                                                     ; This is the check whether the DC motor is required to run
         M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{var.lane_number}                                        ; This enables the DC motor in the reseverse direction
         M400                                                                                                ; This just makes sure the above command runs
-    G1 's0 F{global.AFC_load_retract_speed[1]*60}                                                                      ; This is the actual command to retract the filament back on to the spool
+    G1 'l0 F{global.AFC_load_retract_speed[1]*60}                                                                      ; This is the actual command to retract the filament back on to the spool
     M400                                                                                                    ; This just makes sure the above command runs
     M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}                                            ; This ensures the DC motor is off regardless of whether it was commanded to be on
     M400                                                                                                    ; This just makes sure the above command runs

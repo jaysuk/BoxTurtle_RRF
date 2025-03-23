@@ -13,19 +13,19 @@ if global.AFC_lane_loaded[var.lane_number]
     M98 P"0:/sys/AFC/Motors/Axis_setup.g" A{var.lane_number}                                                              ; This sets up the motors correctly
     set var.total_axis = #move.axes                                                                                       ; Sets the variable to the total number of axes
     M584 P{var.total_axis}                                                                                                ; This unhides all the axes so we can move the lanes
-    G92 's{global.AFC_lane_first_length[var.lane_number]}                                                                 ; This sets the axis length to the current length previously measured
-    G1 's0 F{global.AFC_load_retract_speed[1]*60}                                                                                    ; This retracts the filament to the point where the load switch was triggered
+    G92 'l{global.AFC_lane_first_length[var.lane_number]}                                                                 ; This sets the axis length to the current length previously measured
+    G1 'l0 F{global.AFC_load_retract_speed[1]*60}                                                                                    ; This retracts the filament to the point where the load switch was triggered
 
-    M574 's2 S1 P{global.AFC_hub_switch}                                                                                  ; This sets the hub switch up as an endstop
-    G1 H4 's300 F{global.AFC_load_retract_speed[0]*60}                                                                                  ; This moves to the hub switch and measures the distance moved
+    M574 'l2 S1 P{global.AFC_hub_switch}                                                                                  ; This sets the hub switch up as an endstop
+    G1 H4 'l300 F{global.AFC_load_retract_speed[0]*60}                                                                                  ; This moves to the hub switch and measures the distance moved
     G91                                                                                                                   ; This sets the system into relative mode
-    G1 's{-global.AFC_hub_retract_distance} F{global.AFC_load_retract_speed[1]*60}                                                   ; This retracts the filament by a set amount so its no longer in the hub
+    G1 'l{-global.AFC_hub_retract_distance} F{global.AFC_load_retract_speed[1]*60}                                                   ; This retracts the filament by a set amount so its no longer in the hub
     G90                                                                                                                   ; This sets the system into absolute mode
     M400                                                                                                                  ; This waits for all movement to stop
-    set global.AFC_lane_first_length[{var.lane_number}] = move.axes[{global.om_axis_number}].machinePosition              ; This sets the first length for the lane to the position of the 's axis
+    set global.AFC_lane_first_length[{var.lane_number}] = move.axes[{global.om_axis_number}].machinePosition              ; This sets the first length for the lane to the position of the 'l axis
     echo >"0:/sys/AFC/AFC-info/lane_first_length.g" " ; lane first lengths"                                               ; This writes the first length array to a file
     echo >>"0:/sys/AFC/AFC-info/lane_first_length.g" "set global.AFC_lane_first_length = " ^ global.AFC_lane_first_length ; This writes the first length array to a file
-    M574 's1 S1 P"nil"                                                                                                    ; This frees up the hub switch from being an endstop
+    M574 'l1 S1 P"nil"                                                                                                    ; This frees up the hub switch from being an endstop
     M584 P{var.total_axis-1}                                                                                              ; This hides the axis used for driving the lane
 else
     M118 S{"Lane "^var.lane_number^" is not loaded so nothing to measure"}
