@@ -47,30 +47,16 @@ if !var.hub_empty
         M400
         M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{var.lane_number}                       ; This sets the DC motor in reverse to wind the filament up
         M400
-        if !global.AFC_features[6]
-            M574 'f1 P{"!"^global.AFC_hub_switch} S1 
-            G92 'f20000
-            G1 H4 'f-20000 F{global.AFC_load_retract_speed[1]*60} ; This retracts the filament
-            G91
-            G1 'f{-global.AFC_hub_retract_distance} F{global.AFC_load_retract_speed[1]*60}
-            G90
-            M574 'f1 P"nil" S1
-            M400
-        elif global.AFC_features[6]
-            G92 'f{global.AFC_lane_total_length[var.lane_number]}
-            M400
-            G1 'f{global.AFC_lane_first_length[{var.lane_number}]} F{global.AFC_load_retract_speed[1]*60}
+        M574 'f1 P{"!"^global.AFC_hub_switch} S1 
+        G92 'f20000
+        G1 H4 'f-20000 F{global.AFC_load_retract_speed[1]*60} ; This retracts the filament
+        G91
+        G1 'f{-global.AFC_hub_retract_distance} F{global.AFC_load_retract_speed[1]*60}
+        G90
+        M574 'f1 P"nil" S1
         M400
         M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}                       ; This turns the DC motor off
-        M400
-        if global.AFC_features[6]
-            M574 'f2 S1 P{global.AFC_hub_switch}                                                                                  ; This sets the hub switch up as an endstop
-            G1 H4 'f300 F{global.AFC_load_retract_speed[0]*60}                                                                                  ; This moves to the hub switch and measures the distance moved
-            G91                                                                                                                   ; This sets the system into relative mode
-            G1 'f{-global.AFC_hub_retract_distance+10} F{global.AFC_load_retract_speed[1]*60}                                                   ; This retracts the filament by a set amount so its no longer in the hub
-            G90                                                                                                                   ; This sets the system into absolute mode
-            M574 'f1 P"nil" S1
-            M400                                                                                                                  ; This waits for all movement to stop
+        M400                                                                                                           ; This waits for all movement to stop
         ; This sets the LED colour back to green
         set global.AFC_LED_array[{var.lane_number}]=1
 
