@@ -30,31 +30,31 @@ M98 P"0:/sys/AFC/Motors/Axis_setup.g" A{var.lane_number}
 var total_axis = #move.axes
 
 if global.AFC_lane_loaded[{var.lane_number}] && !global.AFC_features[6]   ; This checks to make sure there is filament loaded in the lane and checks for the feature settings
-    G92 'l{global.AFC_lane_first_length[{var.lane_number}]}
+    G92 'f{global.AFC_lane_first_length[{var.lane_number}]}
     M400
     set global.AFC_LED_array[{var.lane_number}]=2                   ; This sets the colour to blue so we know filament is being loaded
     M584 P{var.total_axis}                                          ; This unhides all the axes
-    M574 'l2 P{global.TN_switches[0]} S1                            ; This sets the TN Advance pin as a homing switch for loading the filament
-    G1 H4 'l20000 F{global.AFC_load_retract_speed[0]*60}                          ; This is an arbitory load distance to cover the length of the buffer tube
+    M574 'f2 P{global.TN_switches[0]} S1                            ; This sets the TN Advance pin as a homing switch for loading the filament
+    G1 H4 'f20000 F{global.AFC_load_retract_speed[0]*60}                          ; This is an arbitory load distance to cover the length of the buffer tube
     M400                                                            ; finish all moves
     G91                                                             ; relative mode
     G4 P500
-    G1 H2 'l{-global.AFC_tn_retract_distance} F{global.AFC_load_retract_speed[1]*60}                         ; This retracts 15mm of filament to ensure the buffer is somewhere in the middle and not triggering either the trailing or advance switches
+    G1 H2 'f{-global.AFC_tn_retract_distance} F{global.AFC_load_retract_speed[1]*60}                         ; This retracts 15mm of filament to ensure the buffer is somewhere in the middle and not triggering either the trailing or advance switches
     M400                                                            ; finish all moves
     G90                                                             ; absolute mode
     G4 P500
-    M574 'l2 P"nil" S1                                              ; free up the endstop pin for this axis
+    M574 'f2 P"nil" S1                                              ; free up the endstop pin for this axis
     G4 P500
     M400
     M98 P"0:/sys/AFC/Motors/Extruder_setup.g" A{var.lane_number} B1 ; setup the mixing extruder
     M400
     M584 P{var.total_axis-1}                                        ; hide all the BT axes
 elif global.AFC_lane_loaded[{var.lane_number}] && global.AFC_features[6]   ; This checks to make sure there is filament loaded in the lane and checks for the feature settings
-    G92 'l{global.AFC_lane_first_length[{var.lane_number}]}
+    G92 'f{global.AFC_lane_first_length[{var.lane_number}]}
     M400
     set global.AFC_LED_array[{var.lane_number}]=2                   ; This sets the colour to blue so we know filament is being loaded
     M584 P{var.total_axis}                                          ; This unhides all the axes
-    G1 'l{(global.AFC_lane_total_length[var.lane_number])} F{global.AFC_load_retract_speed[0]*60}                          ; This is an arbitory load distance to cover the length of the buffer tube
+    G1 'f{(global.AFC_lane_total_length[var.lane_number])} F{global.AFC_load_retract_speed[0]*60}                          ; This is an arbitory load distance to cover the length of the buffer tube
     M400                                                            ; finish all moves
     M98 P"0:/sys/AFC/Motors/Extruder_setup.g" A{var.lane_number} B1 ; setup the mixing extruder
     M400

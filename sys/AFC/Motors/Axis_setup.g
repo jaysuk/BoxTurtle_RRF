@@ -13,12 +13,12 @@ if !exists(param.A)
 
 var toolNumber = param.A                                                      ; This just sets up a variable for the param  
 
-M584 'l{global.AFC_driver_number[{var.toolNumber}]}
-M350 'l{global.AFC_microsteps[{var.toolNumber}]}
-M92 'l{global.AFC_steps_per_mm[{var.toolNumber}]} 
-M906 'l{global.AFC_stepper_current[{var.toolNumber}]} 
-M566 'l{global.AFC_stepper_jerk[{var.toolNumber}]*60} 
-M203 'l{global.AFC_stepper_max_speed[{var.toolNumber}]*60} 
-M201 'l{global.AFC_stepper_acc[{var.toolNumber}]} 
-M208 'l-500 s1
-M208 'l20000 s0
+M584 'f{global.AFC_driver_number[{var.toolNumber}]}
+M350 'f{global.AFC_microsteps[{var.toolNumber}]}
+M92 'f{global.AFC_steps_per_mm[{var.toolNumber}]} 
+M906 'f{global.AFC_stepper_current[{var.toolNumber}]} 
+M566 'f{global.AFC_stepper_jerk[{var.toolNumber}]*60} 
+M203 'f{global.AFC_stepper_max_speed[{var.toolNumber}]*60} 
+M201 'f{global.AFC_stepper_acc[{var.toolNumber}]} 
+M208 'f-500 s1
+M208 'f20000 s0
