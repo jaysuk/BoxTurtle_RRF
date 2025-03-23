@@ -345,6 +345,8 @@ global AFC_extruder_temp = {0,0,0,0}
 
 global AFC_step_through_macro = false
 
+global AFC_startup_check = false
+
 ; ########## Extruder Info ##########
 
 var e_driver = move.extruders[{global.main_extruder_om}].driver

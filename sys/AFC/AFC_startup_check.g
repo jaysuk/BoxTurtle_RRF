@@ -4,11 +4,12 @@ var lane_in_extruder = false
 var home_safe = false
 
 M950 J{global.AFC_hub_input_number} C{global.AFC_hub_switch}
-
+M400
 if sensors.gpIn[global.AFC_hub_input_number].value = 0
     set var.hub_empty = true
 
 M950 J{global.AFC_hub_input_number} C"nil"
+M400
 
 if !var.hub_empty
     M291 P"One of the lanes is loaded. Please select which one so it can be unloaded" K{"Lane 0","Lane 1","Lane 2","Lane 3"} S4 J1                               ; Popup box with options for the lane to unload
@@ -71,18 +72,24 @@ if !var.hub_empty
 
         M400
 
-M950 J{global.AFC_hub_input_number} C{global.AFC_hub_switch}
+if !var.hub_empty
+    M950 J{global.AFC_hub_input_number} C{global.AFC_hub_switch}
+    M400
+    if sensors.gpIn[global.AFC_hub_input_number].value = 0
+        set var.hub_empty = true
 
-if sensors.gpIn[global.AFC_hub_input_number].value = 0
-    set var.hub_empty = true
-
-M950 J{global.AFC_hub_input_number} C"nil"
+    M950 J{global.AFC_hub_input_number} C"nil"
+    M400
 
 if var.hub_empty
     while iterations < global.AFC_number_of_lanes
         if global.AFC_lane_loaded[iterations]
-            M574 's2 S1 P{global.AFC_hub_switch}                                                                                  ; This sets the hub switch up as an endstop
+            M574 's2 S1 P{global.AFC_hub_switch}       
+            M400                                                                           ; This sets the hub switch up as an endstop
             M98 P"0:/sys/AFC/Motors/Axis_setup.g" A{iterations}
+            M400
+            G92 's0
+            M400
             G1 H4 's{global.AFC_lane_first_length[iterations]} F{global.AFC_load_retract_speed[0]*60}                                                                                  ; This moves to the hub switch and measures the distance moved
             if result = 0
                 G91                                                                                                                   ; This sets the system into relative mode
