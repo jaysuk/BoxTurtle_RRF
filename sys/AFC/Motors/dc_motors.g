@@ -14,9 +14,10 @@ var DC2_pin=global.AFC_DC2_pins[{var.lane_number}]
 echo var.SLP_pin
 echo param.A
 
-M950 P{global.AFC_dcm_out_no[0]} C{var.SLP_pin}
-M950 P{global.AFC_dcm_out_no[1]} C{var.DC1_pin}
-M950 P{global.AFC_dcm_out_no[2]} C{var.DC2_pin}
+if param.A = "F" || param.A = "R"
+    M950 P{global.AFC_dcm_out_no[0]} C{var.SLP_pin}
+    M950 P{global.AFC_dcm_out_no[1]} C{var.DC1_pin}
+    M950 P{global.AFC_dcm_out_no[2]} C{var.DC2_pin}
 
 if param.A = "F"
     M42 P0 S1
