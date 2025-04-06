@@ -84,7 +84,7 @@ if var.hub_empty
             G92 'f0
             M400
             G1 H4 'f{global.AFC_lane_first_length[iterations]} F{global.AFC_load_retract_speed[0]*60}                                                                                  ; This moves to the hub switch and measures the distance moved
-            if result = 0
+            if move.axes[{global.om_axis_number}].machinePosition < global.AFC_lane_first_length[iterations]
                 G91                                                                                                                   ; This sets the system into relative mode
                 G1 'f{-global.AFC_hub_retract_distance+10} F{global.AFC_load_retract_speed[1]*60}                                                   ; This retracts the filament by a set amount so its no longer in the hub
                 G90                                                                                                                   ; This sets the system into absolute mode
