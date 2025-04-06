@@ -58,7 +58,7 @@ G1 E{-var.retract} F600
 M400
 
 ; This is to unmap the filament monitor
-M591 P1 D1 C"nil" S1
+M591 D1 P0
 
 ; This is to unmap the extruder
 M98 P"0:/sys/AFC/Motors/Extruder_setup.g" A{var.lane_number} B0
