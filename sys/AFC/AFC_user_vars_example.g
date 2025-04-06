@@ -144,6 +144,10 @@ set global.AFC_neopixel_settings = {0,2,4}
 ; Default is 0
 set global.main_extruder_om = 0
 
+; This is the output numbers for the DC motors
+; Used by M950. Change if you already have outputs setup
+set global.AFC_dcm_out_no = {0,1,2}
+
 ;--=================================================================================-
 ;------- Cut -----------------------------------------------------------------------
 ;--=================================================================================-
