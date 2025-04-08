@@ -34,8 +34,15 @@ if global.AFC_lane_loaded[{var.lane_number}] && !global.AFC_features[6]   ; This
     M400
     set global.AFC_LED_array[{var.lane_number}]=2                   ; This sets the colour to blue so we know filament is being loaded
     M584 P{var.total_axis}                                          ; This unhides all the axes
+    
+    ; If filamatrix pre-extruder sensor pin is defined
+    if global.filamatrix_switches[0] != "nil"
+        M574 'f2 P{global.filamatrix_switches[0]} S1                ; set filamatrix pre-extruder input pin as endstop for 'f
+        G1 H4 'f20000 F{global.AFC_load_retract_speed[0]*60}        ; Load filament until the endstop is triggered
+        M574 'f2 P"nil" S1                                          ; Unset 'f endstop pin
+    
     M574 'f2 P{global.TN_switches[0]} S1                            ; This sets the TN Advance pin as a homing switch for loading the filament
-    G1 H4 'f20000 F{global.AFC_load_retract_speed[0]*60}                          ; This is an arbitory load distance to cover the length of the buffer tube
+    G1 H4 'f20000 F{global.AFC_load_retract_speed[0]*60}            ; This is an arbitory load distance to cover the length of the buffer tube
     M400                                                            ; finish all moves
     G91                                                             ; relative mode
     G4 P500

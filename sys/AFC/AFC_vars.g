@@ -126,7 +126,14 @@ var prep_switch = {"SW2","SW3","SW4","SW5"}
 var load_switch = {"SW7","SW8","SW9","SW10"} 
 
 ; These are the turtle neck pins. This will not need editing if using an AFC board
-var turtleneck_switches = {"SW11","SW12"} 
+var turtleneck_switches = {"SW11","SW12"}
+
+; These are the switches in the filamatrix.
+; First is the switch above the extruder
+; Second is the switch below the ettruder
+; These are absolute input addresses because they are expected to not be on an expansion board
+; Assumed not used, so nil,nil by default
+global filamatrix_switches = { "nil", "nil" }
 
 ; This is the hub switch. This will not need editing if using an AFC board
 var hub_switch = "SW1" 
