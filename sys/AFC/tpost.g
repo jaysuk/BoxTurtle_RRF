@@ -12,7 +12,7 @@ var time_seconds=0
 var time_minutes=0
 var lane_number=param.A
 
-if param.B != 1
+if !exists(param.B) || param.B != 1
     if global.AFC_extruder_temp[{var.lane_number}] != 0
         M568 P{var.lane_number} S{global.AFC_extruder_temp[{var.lane_number}]} R{global.AFC_extruder_temp[{var.lane_number}]}
     else

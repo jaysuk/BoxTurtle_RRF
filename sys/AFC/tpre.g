@@ -29,7 +29,7 @@ M98 P"0:/sys/AFC/Motors/Axis_setup.g" A{var.lane_number}
 
 var total_axis = #move.axes
 
-if global.AFC_lane_loaded[{var.lane_number}] && !global.AFC_features[6]   ; This checks to make sure there is filament loaded in the lane and checks for the feature settings
+if global.AFC_lane_loaded[{var.lane_number}] && global.AFC_features[6] == 0   ; This checks to make sure there is filament loaded in the lane and checks for the feature settings
     G92 'f{global.AFC_lane_first_length[{var.lane_number}]}
     M400
     set global.AFC_LED_array[{var.lane_number}]=2                   ; This sets the colour to blue so we know filament is being loaded
@@ -49,13 +49,28 @@ if global.AFC_lane_loaded[{var.lane_number}] && !global.AFC_features[6]   ; This
     M98 P"0:/sys/AFC/Motors/Extruder_setup.g" A{var.lane_number} B1 ; setup the mixing extruder
     M400
     M584 P{var.total_axis-1}                                        ; hide all the BT axes
-elif global.AFC_lane_loaded[{var.lane_number}] && global.AFC_features[6]   ; This checks to make sure there is filament loaded in the lane and checks for the feature settings
+elif global.AFC_lane_loaded[{var.lane_number}] && global.AFC_features[6] == 1  ; This checks to make sure there is filament loaded in the lane and checks for the feature settings
     G92 'f{global.AFC_lane_first_length[{var.lane_number}]}
     M400
     set global.AFC_LED_array[{var.lane_number}]=2                   ; This sets the colour to blue so we know filament is being loaded
     M584 P{var.total_axis}                                          ; This unhides all the axes
     G1 'f{(global.AFC_lane_total_length[var.lane_number])} F{global.AFC_load_retract_speed[0]*60}                          ; This is an arbitory load distance to cover the length of the buffer tube
     M400                                                            ; finish all moves
+    M98 P"0:/sys/AFC/Motors/Extruder_setup.g" A{var.lane_number} B1 ; setup the mixing extruder
+    M400
+    M584 P{var.total_axis-1}                                        ; hide all the BT axes
+elif global.AFC_lane_loaded[{var.lane_number}] && global.AFC_features[6] == 2  ; This checks to make sure there is filament loaded in the lane and checks for the feature settings
+    G92 'f{global.AFC_lane_first_length[{var.lane_number}]}
+    M400
+    set global.AFC_LED_array[{var.lane_number}]=2                   ; This sets the colour to blue so we know filament is being loaded
+    M584 P{var.total_axis}                                          ; This unhides all the axes
+    M574 'f2 P{global.extruder_switches[0]} S1                ; set pre-extruder input pin as endstop for '
+    M400
+    G1 H4 'f20000 F{global.AFC_load_retract_speed[0]*60}        ; Load filament until the endstop is triggered
+    M400
+    M574 'f2 P"nil" S1                                          ; Unset 'f endstop pin
+    G4 P500
+    M400
     M98 P"0:/sys/AFC/Motors/Extruder_setup.g" A{var.lane_number} B1 ; setup the mixing extruder
     M400
     M584 P{var.total_axis-1}                                        ; hide all the BT axes

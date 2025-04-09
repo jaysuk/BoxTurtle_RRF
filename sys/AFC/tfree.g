@@ -71,7 +71,7 @@ G92 'f{global.AFC_lane_total_length[var.lane_number]}
 if var.DC_motor==1
     M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{var.lane_number}                       ; This sets the DC motor in reverse to wind the filament up
     M400
-if !global.AFC_features[6]
+if global.AFC_features[9] == 0
     M574 'f1 P{"!"^global.AFC_hub_switch} S1 
     G92 'f20000
     G1 H4 'f-20000 F{global.AFC_load_retract_speed[1]*60} ; This retracts the filament
@@ -80,7 +80,7 @@ if !global.AFC_features[6]
     G90
     M574 'f1 P"nil" S1
     M400
-elif global.AFC_features[6]
+elif global.AFC_features[9] == 1
     G92 'f{global.AFC_lane_total_length[var.lane_number]}
     M400
     G1 'f{global.AFC_lane_first_length[{var.lane_number}]} F{global.AFC_load_retract_speed[1]*60}
@@ -88,7 +88,7 @@ M400
 if var.DC_motor==1
     M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}                       ; This turns the DC motor off
 M400
-if global.AFC_features[6]
+if global.AFC_features[9] == 1
     M574 'f2 S1 P{global.AFC_hub_switch}                                                                                  ; This sets the hub switch up as an endstop
     G1 H4 'f300 F{global.AFC_load_retract_speed[0]*60}                                                                                  ; This moves to the hub switch and measures the distance moved
     G91                                                                                                                   ; This sets the system into relative mode

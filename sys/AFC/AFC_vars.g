@@ -92,12 +92,19 @@ var park = false
 var poop = false
 ; purge
 var purge = false
-; use measure lengths for load/unload
-var meas = false
+; how to unload
+; 0 = Use the turtleneck switch to load
+; 1 = Use the measured lengths to load
+; 2 = Use the preload switch in the filametrix to load
+var load = 0
 ; carry out a startup check
 var start = false
 ; use the DC motor to rewind the filament
 var dc = false
+; how to unload
+; 0 = Use the hubswitch to unload
+; 1 = Use measured lengths to unload
+var unload = 0
 
 ; This is the Object Model Number of the axis we use for loading the filament. 
 ; If you just have X, Y and Z then this should be set to 2. Each additional axis you've added will increment this number
@@ -127,6 +134,13 @@ var load_switch = {"SW7","SW8","SW9","SW10"}
 
 ; These are the turtle neck pins. This will not need editing if using an AFC board
 var turtleneck_switches = {"SW11","SW12"} 
+
+; These are the switches either side of the extruder if installed.
+; First is the switch above the extruder
+; Second is the switch below the ettruder
+; These are absolute input addresses because they are expected to not be on an expansion board
+; Assumed not used, so nil,nil by default
+global extruder_switches = { "nil", "nil" }
 
 ; This is the hub switch. This will not need editing if using an AFC board
 var hub_switch = "SW1" 
@@ -342,7 +356,7 @@ global AFC_neopixel_pin = {global.AFC_CAN_address^"."^var.neopixel_pin}
 
 global AFC_tmp_file = "0:/sys/AFC/AFC-info/tmp.g"
 
-global AFC_features={var.brush,var.cut,var.kick,var.park,var.poop,var.purge,var.meas,var.start,var.dc}
+global AFC_features={var.brush,var.cut,var.kick,var.park,var.poop,var.purge,var.load,var.start,var.dc,var.unload}
 
 ; ########## Lane Info ############
 
