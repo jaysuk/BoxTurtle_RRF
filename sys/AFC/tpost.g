@@ -36,7 +36,7 @@ if global.AFC_features[3]
 if global.AFC_features[5]
     M98 P"0:/sys/AFC/purge.g"
 
-if global.AFC_features[1]
+if global.AFC_features[0]
     M98 P"0:/sys/AFC/brush.g"
 
 M400
