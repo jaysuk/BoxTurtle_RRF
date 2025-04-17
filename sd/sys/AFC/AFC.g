@@ -67,6 +67,3 @@ M950 E{global.AFC_neopixel_settings[0]} C{global.AFC_neopixel_pin} T{global.AFC_
 if fileexists("0:/sys/AFC/AFC-info/LEDs.g")
     M98 P"0:/sys/AFC/AFC-info/LEDs.g"
 M98 P"0:/sys/AFC/LEDs.g"
-
-if global.AFC_features[7]
-    M98 P"0:/sys/AFC/AFC_startup_check.g"

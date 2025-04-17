@@ -1,0 +1,9 @@
+{
+  "id": "BoxTurtlePlugin",
+  "name": "BoxTurtle Config Plugin",
+  "author": "James Skitt",
+  "version": "1.0.0",
+  "license": "MIT",
+  "homepage": "https://github.com/jaysuk/BoxTurtle_RRF",
+  "rrfVersion": "3.6"
+}

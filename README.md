@@ -33,16 +33,14 @@ G4 S2
 M98 P"0:/sys/AFC/AFC.g"
 ```
 
+Make sure you remove `T0` or similar from your config.g
+Rename the file "AFC_user_vars_example.g" in the AFC folder to "AFC_user_vars.g" and edit each of the variables to suit your machine.  
+Remember to enable the features you want to use.  
 Reboot your printer.  
 Run the macro "Create System Files" and select all.
 Load some filemant to each lane.
 Run the macro "Lane - Measure First" for each lane.
 Run the macro "Measure Main Length" choosing one of the lanes to use. It doesn't matter which.
-
-Rename the file "AFC_user_vars_example.g" in the AFC folder to "AFC_user_vars.g" and edit each of the variables to suit your machine.  
-Remember to enable the features you want to use.  
-
-Reboot your machine and you should be good to go.  
 
 I have also included a print_start.g file and a stop.g file. These should be suitable for using with your machine.  
 
