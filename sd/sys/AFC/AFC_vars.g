@@ -127,13 +127,28 @@ var DC1_pins = {"dc11","dc12","dc13","dc14"}
 var DC2_pins = {"dc21","dc22","dc23","dc24"} 
 
 ; These are the prep switch pins. This will not need editing if using an AFC board
-var prep_switch = {"SW2","SW3","SW4","SW5"} 
+var p_s = {"SW2","SW3","SW4","SW5"} 
+
+; This is to set a leading character to the pin for the prep switch
+; ! = inverted
+; ^ = pullup
+var p_s_p = "^!"
 
 ; These are the load switch pins. This will not need editing if using an AFC board
-var load_switch = {"SW7","SW8","SW9","SW10"} 
+var l_s = {"SW7","SW8","SW9","SW10"} 
+
+; This is to set a leading character to the pin for the load pin
+; ! = inverted
+; ^ = pullup
+var l_s_p = "^"
 
 ; These are the turtle neck pins. This will not need editing if using an AFC board
 var turtleneck_switches = {"SW11","SW12"} 
+
+; This is to set a leading character to the pin for the turtleneck switch
+; ! = inverted
+; ^ = pullup
+var tn_s_p = ""
 
 ; These are the switches either side of the extruder if installed.
 ; First is the switch above the extruder
@@ -144,6 +159,11 @@ global extruder_switches = { "nil", "nil" }
 
 ; This is the hub switch. This will not need editing if using an AFC board
 var hub_switch = "SW1" 
+
+; This is to set a leading character to the pin for the hub switch
+; ! = inverted
+; ^ = pullup
+var h_s_p = "^"
 
 ; This is the neopixel pin. This will not need editing if using an AFC board
 var neopixel_pin = "neopixel1"
@@ -348,10 +368,10 @@ global AFC_driver_number = {{global.AFC_CAN_address+var.driver_number[0]+0.0001}
 global AFC_SLP_pins = {{global.AFC_CAN_address^"."^var.SLP_pins[0]},{global.AFC_CAN_address^"."^var.SLP_pins[1]},{global.AFC_CAN_address^"."^var.SLP_pins[2]},{global.AFC_CAN_address^"."^var.SLP_pins[3]}}         ; These are the SLP pins used by the DC motors
 global AFC_DC1_pins = {{global.AFC_CAN_address^"."^var.DC1_pins[0]},{global.AFC_CAN_address^"."^var.DC1_pins[1]},{global.AFC_CAN_address^"."^var.DC1_pins[2]},{global.AFC_CAN_address^"."^var.DC1_pins[3]}}         ; These are the DC1 pins used by the DC motors
 global AFC_DC2_pins = {{global.AFC_CAN_address^"."^var.DC2_pins[0]},{global.AFC_CAN_address^"."^var.DC2_pins[1]},{global.AFC_CAN_address^"."^var.DC2_pins[2]},{global.AFC_CAN_address^"."^var.DC2_pins[3]}}         ; These are the DC2 pins used by the DC motors
-global AFC_prep_switch = {{"^!"^global.AFC_CAN_address^"."^var.prep_switch[0]},{"^!"^global.AFC_CAN_address^"."^var.prep_switch[1]},{"^!"^global.AFC_CAN_address^"."^var.prep_switch[2]},{"^!"^global.AFC_CAN_address^"."^var.prep_switch[3]}} ; These are the prep switches of each lane
-global AFC_load_switch = {{global.AFC_CAN_address^"."^var.load_switch[0]},{global.AFC_CAN_address^"."^var.load_switch[1]},{global.AFC_CAN_address^"."^var.load_switch[2]},{global.AFC_CAN_address^"."^var.load_switch[3]}}        ; These are the load switches of each lane
-global TN_switches = {{global.AFC_CAN_address^"."^var.turtleneck_switches[0]},{global.AFC_CAN_address^"."^var.turtleneck_switches[1]}}                                ; These are in the order of Advance and Trailing
-global AFC_hub_switch = {"^"^global.AFC_CAN_address^"."^var.hub_switch}
+global AFC_prep_switch = {{var.p_s_p^global.AFC_CAN_address^"."^var.p_s[0]},{var.p_s_p^global.AFC_CAN_address^"."^var.p_s[1]},{var.p_s_p^global.AFC_CAN_address^"."^var.p_s[2]},{var.p_s_p^global.AFC_CAN_address^"."^var.p_s[3]}} ; These are the prep switches of each lane
+global AFC_load_switch = {{var.l_s_p^global.AFC_CAN_address^"."^var.l_s[0]},{var.l_s_p^global.AFC_CAN_address^"."^var.l_s[1]},{var.l_s_p^global.AFC_CAN_address^"."^var.l_s[2]},{var.l_s_p^global.AFC_CAN_address^"."^var.l_s[3]}}        ; These are the load switches of each lane
+global TN_switches = {{var.tn_s_p^global.AFC_CAN_address^"."^var.turtleneck_switches[0]},{var.tn_s_p^global.AFC_CAN_address^"."^var.turtleneck_switches[1]}}                                ; These are in the order of Advance and Trailing
+global AFC_hub_switch = {var.h_s_p^global.AFC_CAN_address^"."^var.hub_switch}
 global AFC_neopixel_pin = {global.AFC_CAN_address^"."^var.neopixel_pin}
 
 global AFC_tmp_file = "0:/sys/AFC/AFC-info/tmp.g"
