@@ -56,3 +56,8 @@ M400
 M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}    
 M400 
 M584 P{var.total_axis-1}
+
+var no_lanes = #global.AFC_lane_first_length
+
+while iterations < var.no_lanes
+    M118 S{"Lane "^iterations^" length is "^global.AFC_lane_total_length[iterations]^"mm"}
