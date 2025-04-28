@@ -107,7 +107,7 @@ var dc = false
 var unload = 0
 
 ; This is the Object Model Number of the axis we use for loading the filament. 
-; If you just have X, Y and Z then this should be set to 2. Each additional axis you've added will increment this number
+; If you just have X, Y and Z then this should be set to 3. Each additional axis you've added will increment this number
 set global.om_axis_number = 3
 
 ; These are the measurements of your extruder setup. 
