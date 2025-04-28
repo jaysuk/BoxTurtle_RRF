@@ -92,7 +92,7 @@ var park = false
 var poop = false
 ; purge
 var purge = false
-; how to unload
+; how to load
 ; 0 = Use the turtleneck switch to load
 ; 1 = Use the measured lengths to load
 ; 2 = Use the preload switch above the extruder to load
