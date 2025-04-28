@@ -1,5 +1,18 @@
 ; param.A - This is the lane number
 
+; AFC Feature Numbers
+; 0 = brush
+; 1 = cut
+; 2 = kick
+; 3 = park
+; 4 = poop
+; 5 = purge
+; 6 = load
+; 7 = startup check
+; 8 = use the dc motor on unload
+; 9 = unload method
+; 10 = spoolman support
+
 if !exists(param.A) ; Do a check of whether the lane number has been passed
     echo "Missing the lane number"
     abort
@@ -27,4 +40,5 @@ if !sensors.endstops[{global.om_axis_number}].triggered
 M400
 M574 'f1 P"nil" S1
 M400
+M84 'f
 M584 P{var.total_axis-1}
