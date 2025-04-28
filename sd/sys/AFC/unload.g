@@ -1,6 +1,19 @@
 ; param.A - This is the lane number
 ; param.B - This determines if the DC motors should run. A value of 1 is yes. No B value or a value of 0 is no
 
+; AFC Feature Numbers
+; 0 = brush
+; 1 = cut
+; 2 = kick
+; 3 = park
+; 4 = poop
+; 5 = purge
+; 6 = load
+; 7 = startup check
+; 8 = use the dc motor on unload
+; 9 = unload method
+; 10 = spoolman support
+
 var lane_number = 0                                                                                         ; This just initialises the variable
 var first_length = 0                                                                                        ; This just initialises the variable
 var unload_length = 0                                                                                       ; This just initialises the variable
