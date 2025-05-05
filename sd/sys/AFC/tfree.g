@@ -22,10 +22,16 @@ var time_seconds=0
 var time_minutes=0
 var DC_motor=0
 var retract = 0
-var lane_number = param.A
+var lane_number = 0
+
+if exists(param.A)
+    set var.lane_number = param.A
+
+if !exists(param.A)
+    set var.lane_number = state.currentTool
 
 if global.AFC_features[10] == 1
-    set global.spoolman_capture_extrusion{[var.lane_number}] = false
+    set global.spoolman_capture_extrusion[{var.lane_number}] = false
 
 if !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed                                                      ; checks if the printer is homed
 	G28                                                                                                                   ; home the printer
