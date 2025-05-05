@@ -55,12 +55,14 @@ if global.AFC_lane_loaded[{var.lane_number}]                                    
     M950 J{global.AFC_hub_input_number} C{global.AFC_hub_switch}                                                          ; sets up the hub switch
     G91                                                                                                                   ; set relative positioning
     G1 'f{global.AFC_hub_load_distance[0]} F{global.AFC_load_retract_speed[0]*60}                                         ; This does an initial load to check the filament has made it to the switch
+    M400
     if sensors.gpIn[global.AFC_hub_input_number].value == 1                                                               ; checks the lane status
         M98 P"0:/sys/AFC/debug.g" A"T Pre: Filament loaded into hub"                                                      ; debug output if enabled
         M950 J{global.AFC_hub_input_number} C"nil"
     else
         while iterations < var.lane_load_retry && !var.hub_loaded                                                         ; attempts the load a few more times
             G1 'f{global.AFC_hub_load_distance[1]} F{global.AFC_load_retract_speed[0]*60}                                 ; loads a small amount
+            M400
             if sensors.gpIn[global.AFC_hub_input_number].value == 1                                                       ; checks the hub switch
                 set var.hub_loaded = true                                                                                 ; if loaded it changes it to true
                 M98 P"0:/sys/AFC/debug.g" A"T Pre: Filament loaded into hub"                                                      ; debug output if enabled
