@@ -24,7 +24,7 @@ if global.slicerBedTempOverride != 0
 else
 	M190 S{param.A}										; set bed temperature to the override temperature set in btncmd instead
 
-var.length_filament_soak = #global.filamentSoak
+set var.length_filament_soak = #global.filamentSoak
 while iterations < var.length_filament_soak
 	if param.B = global.filamentSoak[{iterations}]
 		if !global.soakTimeOverride & global.soakTime != 0                        ; check whether the chamber temperature soak time should be overriden
