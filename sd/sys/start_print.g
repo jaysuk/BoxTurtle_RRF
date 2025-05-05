@@ -35,7 +35,7 @@ if global.Cancelled = true                                                  ; al
 		G4 S3
 		abort "Print cancelled."
 else  
-	if if !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed
+    if !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed
 		G28                                                                       ; home the printer
 	
 if global.Cancelled = true                                                  ; allows print to be cancelled at this point
