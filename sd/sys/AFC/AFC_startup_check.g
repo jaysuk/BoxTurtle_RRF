@@ -1,3 +1,16 @@
+; AFC Feature Numbers
+; 0 = brush
+; 1 = cut
+; 2 = kick
+; 3 = park
+; 4 = poop
+; 5 = purge
+; 6 = load
+; 7 = startup check
+; 8 = use the dc motor on unload
+; 9 = unload method
+; 10 = spoolman support
+
 var hub_empty = false
 var lane_number = 0
 var lane_in_extruder = false
@@ -90,6 +103,7 @@ if var.hub_empty
                 G90                                                                                                                   ; This sets the system into absolute mode
             else
                 M98 P"0:/macros/Lane - Mark Unloaded" A{iterations}
+            M84 'f
             M574 'f1 P"nil" S1
             M400   
             ; This hides the axes again

@@ -64,6 +64,11 @@ set global.AFC_unload_input_number = 7
 ; Changing this value will require the lane laoding length to be remeasured
 set global.AFC_hub_retract_distance = 25
 
+; This is how far the filament is loaded into the hub switch to check the filament is loading.
+; First value is the initial load
+; Second value is the retry amount
+set global.AFC_hub_load_distance = {35, 5}
+
 ; This is how far the filament is retracted after the turtleneck is activated after a filament load.
 ; Its also used in filament unloading
 ; Changing this value will require the lane laoding length to be remeasured
@@ -105,6 +110,12 @@ var dc = false
 ; 0 = Use the hubswitch to unload
 ; 1 = Use measured lengths to unload
 var unload = 0
+
+; spoolman support
+; this sets whether spoolman filament tracking support is to be enabled
+; 0 = disabled
+; 1 = enabled
+var spoolman = 0
 
 ; This is the Object Model Number of the axis we use for loading the filament. 
 ; If you just have X, Y and Z then this should be set to 3. Each additional axis you've added will increment this number
@@ -260,6 +271,9 @@ set global.AFC_purge_location = {-1,-1} ; X, Y location of where to purge
 ; Sets the extrusion speed for the purge
 set global.AFC_purge_speed = 6.5 ; speed (mm/s) of the purge
 
+; Set to False to not move in Z during poop
+set global.AFC_z_purge_move = true 
+
 ; Speed, in mm/s to lift z after the purge is completed. Its a faster lift to keep it from 
 ; sticking to the toolhead
 set global.AFC_purge_fast_z = {200,20} ; speed (mm/s), distance (mm)
@@ -374,4 +388,4 @@ set global.TN_switches = {{var.tn_s_p^global.AFC_CAN_address^"."^var.turtleneck_
 set global.AFC_hub_switch = {var.h_s_p^global.AFC_CAN_address^"."^var.hub_switch}
 set global.AFC_neopixel_pin = {global.AFC_CAN_address^"."^var.neopixel_pin}
 
-set global.AFC_features={var.brush,var.cut,var.kick,var.park,var.poop,var.purge,var.load,var.start,var.dc,var.unload}
+set global.AFC_features={var.brush,var.cut,var.kick,var.park,var.poop,var.purge,var.load,var.start,var.dc,var.unload,var.spoolman}

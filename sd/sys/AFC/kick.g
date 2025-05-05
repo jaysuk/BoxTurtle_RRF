@@ -2,6 +2,7 @@ var xmin = move.axes[0].min
 var xmax = move.axes[0].max
 var ymin = move.axes[1].min
 var ymax = move.axes[1].max
+var location_factor = 0
 
 M98 P"0:/sys/AFC/debug.g" A"AFC_Kick: Starting Filament Kick"
 

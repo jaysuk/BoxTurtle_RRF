@@ -2,6 +2,31 @@
 ; param.B - This determines if the DC motors should run. B1 is yes
 ; param.C - This is used to ignore anything that requires an X/Y/Z move
 
+; AFC Feature Numbers
+; 0 = brush
+; 1 = cut
+; 2 = kick
+; 3 = park
+; 4 = poop
+; 5 = purge
+; 6 = load
+; 7 = startup check
+; 8 = use the dc motor on unload
+; 9 = unload method
+; 10 = spoolman support
+
+var tfree_time1=0
+var tfree_time=state.upTime
+var time=0
+var time_seconds=0
+var time_minutes=0
+var DC_motor=0
+var retract = 0
+var lane_number = param.A
+
+if global.AFC_features[10] == 1
+    set global.spoolman_capture_extrusion{[var.lane_number}] = false
+
 if !exists(param.C)
     if global.AFC_features[1]   ; Do a check to see if the cut feature has been enabled. If so, run it
         M98 P"0:/sys/AFC/cut.g"
@@ -13,21 +38,13 @@ if !exists(param.A)
     echo "Missing the lane number"
     abort
 
-var tfree_time1=0
-var tfree_time=state.upTime
-var time=0
-var time_seconds=0
-var time_minutes=0
-var DC_motor=0
-var retract = 0
-
 var total_axis = #move.axes
 if global.AFC_features[1]
     set var.retract = global.main_extruder_measurements[1]+5
 else
     set var.retract = global.main_extruder_measurements[0]+5
 
-var lane_number = param.A
+
 
 if !exists(param.C)
     var current_temp = tools[{var.lane_number}].active[0]

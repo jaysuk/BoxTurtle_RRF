@@ -60,6 +60,8 @@ if fileexists("0:/sys/AFC/AFC-info/lane_status.g")
     M98 P"0:/sys/AFC/AFC-info/lane_status.g"
 if fileexists("0:/sys/AFC/AFC-info/lane_filament.g")
     M98 P"0:/sys/AFC/AFC-info/lane_filament.g"
+if fileexists("0:/sys/AFC/AFC-info/spoolman_status.g")
+    M98 P"0:/sys/AFC/AFC-info/spoolman_status.g"
 set global.AFC_lane_filament_type1 = global.AFC_lane_filament_type
     
 ;######## LEDs ##################
