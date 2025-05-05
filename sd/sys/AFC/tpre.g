@@ -24,6 +24,9 @@ var warning_text = "No filament loaded in Lane "^{var.lane_number}              
 var lane_load_retry = 5                                                                                                   ; sets up the number of retries allowed to load the hub
 var hub_loaded = false                                                                                                    ; initiates a variable with a value of false
 
+if !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed                                                      ; checks if the printer is homed
+	G28                                                                                                                   ; home the printer
+
 M568 P{var.lane_number} A2                                                                                                ; sets the hotend to on
 
 M950 J{global.AFC_hub_input_number} C{global.AFC_hub_switch}                                                              ; sets up the hub switch
@@ -60,6 +63,8 @@ if global.AFC_lane_loaded[{var.lane_number}]                                    
             G1 'f{global.AFC_hub_load_distance[1]} F{global.AFC_load_retract_speed[0]*60}                                 ; loads a small amount
             if sensors.gpIn[global.AFC_hub_input_number].value == 1                                                       ; checks the hub switch
                 set var.hub_loaded = true                                                                                 ; if loaded it changes it to true
+                M98 P"0:/sys/AFC/debug.g" A"T Pre: Filament loaded into hub"                                                      ; debug output if enabled
+                M950 J{global.AFC_hub_input_number} C"nil"
             if iterations == (var.lane_load_retry - 1) && !var.hub_loaded                                                 ; if not loaded on last try put out a warning and abort
                 M291 S2 P"Filament has not made it into the filament hub, aborting macro" R"Warning"
                 M950 J{global.AFC_hub_input_number} C"nil"
