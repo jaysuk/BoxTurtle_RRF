@@ -65,7 +65,7 @@ global AFC_unload_input_number = 7
 global AFC_hub_retract_distance = 25
 
 ; This is how far the filament is loaded into the hub switch to check the filament is loading.
-; First value is the initial load
+; First value is the initial load. This should be 5 to 10mm greater than the AFC_hub_retract_distance
 ; Second value is the retry amount
 global AFC_hub_load_distance = {35, 5}
 
@@ -163,7 +163,7 @@ var tn_s_p = ""
 
 ; These are the switches either side of the extruder if installed.
 ; First is the switch above the extruder
-; Second is the switch below the ettruder
+; Second is the switch below the extruder
 ; These are absolute input addresses because they are expected to not be on an expansion board
 ; Assumed not used, so nil,nil by default
 global extruder_switches = { "nil", "nil" }
