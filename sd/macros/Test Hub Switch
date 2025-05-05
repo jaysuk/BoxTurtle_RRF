@@ -1,0 +1,6 @@
+M950 J{global.AFC_hub_input_number} C{global.AFC_hub_switch}
+if sensors.gpIn[global.AFC_hub_input_number].value !=0
+    M118 S"There is filament detected in the hub"
+else
+    M118 S"There is not filament detected in the hub"
+M950 J{global.AFC_hub_input_number} C"nil"
