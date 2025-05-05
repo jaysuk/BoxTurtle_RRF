@@ -27,6 +27,9 @@ var lane_number = param.A
 if global.AFC_features[10] == 1
     set global.spoolman_capture_extrusion{[var.lane_number}] = false
 
+if !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed                                                      ; checks if the printer is homed
+	G28                                                                                                                   ; home the printer
+
 if !exists(param.C)
     if global.AFC_features[1]   ; Do a check to see if the cut feature has been enabled. If so, run it
         M98 P"0:/sys/AFC/cut.g"
@@ -43,8 +46,6 @@ if global.AFC_features[1]
     set var.retract = global.main_extruder_measurements[1]+5
 else
     set var.retract = global.main_extruder_measurements[0]+5
-
-
 
 if !exists(param.C)
     var current_temp = tools[{var.lane_number}].active[0]
