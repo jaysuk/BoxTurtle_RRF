@@ -68,38 +68,11 @@ if global.AFC_lane_loaded[{var.lane_number}]                                    
     G90
     
     if global.AFC_features[6] == 0                                                                                        ; This checks for the feature settings
-        M574 'f2 P{global.TN_switches[0]} S1                                                                              ; This sets the TN Advance pin as a homing switch for loading the filament
-        G1 H4 'f20000 F{global.AFC_load_retract_speed[0]*60}                                                              ; This is an arbitory load distance to cover the length of the buffer tube
-        M400                                                                                                              ; finish all moves
-        G91                                                                                                               ; relative mode
-        G4 P500
-        G1 H2 'f{-global.AFC_tn_retract_distance} F{global.AFC_load_retract_speed[1]*60}                                  ; This retracts 15mm of filament to ensure the buffer is somewhere in the middle and not triggering either the trailing or advance switches
-        M400                                                                                                              ; finish all moves
-        G90                                                                                                               ; absolute mode
-        G4 P500
-        M574 'f2 P"nil" S1                                                                                                ; free up the endstop pin for this axis
-        G4 P500
-        M400
-        M98 P"0:/sys/AFC/Motors/Extruder_setup.g" A{var.lane_number} B1                                                   ; setup the mixing extruder
-        M400
-        M584 P{var.total_axis-1}                                                                                          ; hide all the BT axes
+        M98 P"0:/sys/AFC/Features/6_0.g"
     elif global.AFC_features[6] == 1                                                                                      ; This checks for the feature settings
-        G1 'f{(global.AFC_lane_total_length[var.lane_number])} F{global.AFC_load_retract_speed[0]*60}                     ; This is an arbitory load distance to cover the length of the buffer tube
-        M400                                                                                                              ; finish all moves
-        M98 P"0:/sys/AFC/Motors/Extruder_setup.g" A{var.lane_number} B1                                                   ; setup the mixing extruder
-        M400
-        M584 P{var.total_axis-1}                                                                                          ; hide all the BT axes
+        M98 P"0:/sys/AFC/Features/6_1.g"
     elif global.AFC_features[6] == 2                                                                                      ; This checks for the feature settings
-        M574 'f2 P{global.extruder_switches[0]} S1                                                                        ; set pre-extruder input pin as endstop for 'f
-        M400
-        G1 H4 'f20000 F{global.AFC_load_retract_speed[0]*60}                                                              ; Load filament until the endstop is triggered
-        M400
-        M574 'f2 P"nil" S1                                                                                                ; Unset 'f endstop pin
-        G4 P500
-        M400
-        M98 P"0:/sys/AFC/Motors/Extruder_setup.g" A{var.lane_number} B1                                                   ; setup the mixing extruder
-        M400
-        M584 P{var.total_axis-1}                                                                                          ; hide all the BT axes
+        M98 P"0:/sys/AFC/Features/6_2.g"
     else 
         M291 S2 P{var.warning_text} R"Warning"
         T-1 P0
