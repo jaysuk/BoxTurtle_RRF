@@ -80,7 +80,7 @@ if {global.AFC_lane_loaded[var.lane_number]} = true                             
                 M400                                                                                                ; This just makes sure the above command runs
                 set var.retry_successful = true
     if !var.retry_successful
-        M118 S"Lane "^var.lane_number^" has not been successfully reloaded. Please recheck your measurements"
+        M118 S{"Lane "^var.lane_number^" has not been successfully unloaded. Please recheck your measurements"}
     M574 'f1 P"nil" S1                                                                                      ; This frees up the load switch from being used as a GPIO input
     M584 P{var.total_axis-1}                                                                                ; This hides the axis used for movement
 else
