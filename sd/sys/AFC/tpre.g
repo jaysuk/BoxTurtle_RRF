@@ -75,11 +75,11 @@ if global.AFC_lane_loaded[{var.lane_number}]                                    
     G90
     
     if global.AFC_features[6] == 0                                                                                        ; This checks for the feature settings
-        M98 P"0:/sys/AFC/Features/6_0.g"
+        M98 P"0:/sys/AFC/Features/6_0.g" A{var.lane_number} B{var.total_axis}
     elif global.AFC_features[6] == 1                                                                                      ; This checks for the feature settings
-        M98 P"0:/sys/AFC/Features/6_1.g"
+        M98 P"0:/sys/AFC/Features/6_1.g" A{var.lane_number} B{var.total_axis}
     elif global.AFC_features[6] == 2                                                                                      ; This checks for the feature settings
-        M98 P"0:/sys/AFC/Features/6_2.g"
+        M98 P"0:/sys/AFC/Features/6_2.g" A{var.lane_number} B{var.total_axis}
     else 
         M291 S2 P{var.warning_text} R"Warning"
         T-1 P0

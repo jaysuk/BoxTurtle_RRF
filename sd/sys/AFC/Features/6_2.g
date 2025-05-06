@@ -1,3 +1,22 @@
+; param.A = lane number
+; param.B = total number of axes
+
+; AFC Feature Numbers
+; 0 = brush
+; 1 = cut
+; 2 = kick
+; 3 = park
+; 4 = poop
+; 5 = purge
+; 6 = load
+; 7 = startup check
+; 8 = use the dc motor on unload
+; 9 = unload method
+; 10 = spoolman support
+
+var lane_number = param.A
+var total_axis = param.B
+
 M574 'f2 P{global.extruder_switches[0]} S1                                                                        ; set pre-extruder input pin as endstop for 'f
 M400
 G1 H4 'f20000 F{global.AFC_load_retract_speed[0]*60}                                                              ; Load filament until the endstop is triggered
