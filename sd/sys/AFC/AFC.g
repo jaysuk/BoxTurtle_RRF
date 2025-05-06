@@ -35,19 +35,19 @@ M201 E{global.main_extruder[5],global.AFC_stepper_acc[0]}                       
 M83
 
 ;######## Tools #################
-M563 P0 D0:1 H1 F0                               ; define tool 0 used by lane 0
+M563 P0 D0:1 H{tools[0].heaters[0]} F{tools[0].fans[0]}                               ; define tool 0 used by lane 0
 G10 P0 X0 Y0 Z0                                ; set tool 0 axis offsets
 G10 P0 R0 S0                                   ; set initial tool 0 active and standby temperatures to 0C
 
-M563 P1 D0:1 H1 F0                               ; define tool 1 used by lane 1
+M563 P1 D0:1 H{tools[0].heaters[0]} F{tools[0].fans[0]}                               ; define tool 1 used by lane 1
 G10 P1 X0 Y0 Z0                                ; set tool 0 axis offsets
 G10 P1 R0 S0                                   ; set initial tool 0 active and standby temperatures to 0C
 
-M563 P2 D0:1 H1 F0                               ; define tool 2 used by lane 2
+M563 P2 D0:1 H{tools[0].heaters[0]} F{tools[0].fans[0]}                               ; define tool 2 used by lane 2
 G10 P2 D0:1 Y0 Z0                                ; set tool 0 axis offsets
 G10 P2 R0 S0                                   ; set initial tool 0 active and standby temperatures to 0C
 
-M563 P3 D0:1 H1 F0                               ; define tool 3 used by lane 3
+M563 P3 D0:1 H{tools[0].heaters[0]} F{tools[0].fans[0]}                               ; define tool 3 used by lane 3
 G10 P3 X0 Y0 Z0                                ; set tool 0 axis offsets
 G10 P3 R0 S0                                   ; set initial tool 0 active and standby temperatures to 0C
 
