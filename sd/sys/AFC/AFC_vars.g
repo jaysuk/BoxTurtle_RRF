@@ -4,38 +4,46 @@
 
 ; AFC CAN Address
 ; This is the default CAN address of the AFC-Lite board running RRF
+; This does not come from the klipper implementation
 global AFC_CAN_address = 119
 
 ; This sets the S value used in M569
 ; Snnn Direction of movement of the motor(s) attached to this driver: 0 = backwards, 1 = forwards
 ; There should be no need to adjust this with a default AFC build
+; This does not come from the klipper implementation
 global AFC_stepper_direction = {0,0,0,0}
 
 ; This sets the microstepping used by each of the lane stepper motors. There should be no need to adjust this with a default AFC build
 ; This can be set to 1, 2, 4, 8, 16, 32, 64, 128 and 256. If you adjust this setting make sure you adjust the steps per mm to suit
+; This does not come from the klipper implementation
 global AFC_microsteps = {16,16,16,16}
 
 ; This sets the steps per mm of each lane. There should be no need to adjust this with a default AFC build
+; This does not come from the klipper implementation
 global AFC_steps_per_mm = {682,682,682,682}
 
 ; This is the current used by each stepper driver. 
 ; This is in mA.
 ; There should be no need to adjust this with a default AFC build
+; This does not come from the klipper implementation
 global AFC_stepper_current = {1000,1000,1000,1000}
 
 ; This is the jerk setting for motor jerk set per lane. 
 ; These are in mm/s
 ; There should be no need to adjust this with a default AFC build
+; This does not come from the klipper implementation
 global AFC_stepper_jerk = {60,60,60,60}                             ; lanes 0 to 3 and then for the extruder
 
 ; This is the maximum speed for each lane. 
 ; These are in mm/s
 ; There should be no need to adjust this with a default AFC build
+; This does not come from the klipper implementation
 global AFC_stepper_max_speed = {60,60,60,60}                   ; lanes 0 to 3 and then for the extruder
 
 ; This is the maximum acceleration for each lane. 
 ; These are in mm/s2
 ; There should be no need to adjust this with a default AFC build
+; This does not come from the klipper implementation
 global AFC_stepper_acc = {3000,3000,3000,3000}
 
 ; This is the load and retract speeds used when using the lanes.
@@ -44,6 +52,10 @@ global AFC_stepper_acc = {3000,3000,3000,3000}
 ; Third value is the load speed of the extruder
 ; The values are in mm/s
 global AFC_load_retract_speed = {35,35,5}
+
+; This is the length to use for the loading and measuring and should be greater than the main bowden length.
+; There is no reason to change this default value
+global AFC_max_load_length = 20000
 
 ; These are the RRF trigger numbers to be used by the loading switches.
 ; The gcode these are used with is the T value in M581
@@ -208,10 +220,12 @@ global filamentSoak = {"ABS","ASA"}
 ; This should be the position of the toolhead where the cutter arm just
 ; lightly touches the depressor pin
 ; The first value is the x coordinate and the second value is the y coordinate
+; AFC_Marco_Cars.cfg line 32
 global AFC_cut_location = {-1,-1} 
 
 ; Direction to make the cut move (left, right, front, back).
 ; Make sure the word you change to is all lowercase
+; AFC_Marco_Cars.cfg line 38
 global AFC_cut_direction = "left" 
 
 ; Park
@@ -225,7 +239,8 @@ global AFC_cut_direction = "left"
 ; your toolhead till the cutter arm is completely compressed. Take 0.5mm off this distance
 ; as a buffer. 
 ; Ex pin_loc_x : 9, 310  fully compressed at 0, 310 set cut_move_dist to 8.5
-global AFC_cut_dist = {6.0,8.0} ; park (mm) and move (mm)
+; AFC_Marco_Cars.cfg line 42 for the first value and line 50 for the second
+global AFC_cut_dist = {6.0,8.5} ; park (mm) and move (mm)
 
 ; Speed related settings for tip cutting
 ; Note that if the cut speed is too fast, the steppers can lose steps.
@@ -233,32 +248,39 @@ global AFC_cut_dist = {6.0,8.0} ; park (mm) and move (mm)
 ; - We first make a fast move to accumulate some momentum and get the cut
 ;   blade to the initial contact with the filament
 ; - We then make a slow move for the actual cut to happen 
+; AFC_Marco_Cars.cfg lines 58 to 63 and line 77
 global AFC_cut_move = {32,10,150,50,0.85,25,2} ; Fast speed (mm/s), slow speed (mm/s), evacuate speed (mm/s), dwell time (ms), fast move fraction, extruder move speed (ms) and cut count
 
-;If the toolhead returns to initial position after the cut is complete.
+; If the toolhead returns to initial position after the cut is complete.
+; AFC_Marco_Cars.cfg line 66
 ;global AFC_cut_restore_pos = false ; True = return to initial position, False = don't return
 
 ; Distance to retract prior to making the cut, this reduces wasted filament but might cause clog 
 ; if set too large and/or if there are gaps in the hotend assembly 
 ; *This must be less than the distance from the nozzle to the cutter
-global AFC_cut_retract_length = 30 ; Distance (mm)
+; AFC_Marco_Cars.cfg line 71
+global AFC_cut_retract_length = 20 ; Distance (mm)
 
 ; This can help prevent clogging of some toolheads by doing a quick tip from to reduce stringing
+; AFC_Marco_Cars.cfg line 74
 global AFC_cut_quick_tip_forming = false ; true or false
 
 ; Retract length and speed after the cut so that the cutter can go back 
 ; into its origin position
+; AFC_Marco_Cars.cfg line 81 and 82
 global AFC_cut_rip = {1.0,3} ; Distance (mm), speed (mm/s)
 
 ; Pushback of the remaining tip from the cold end into the hotend
 ; *Must be less then retract_length
-global AFC_cut_pushback = {25,20} ; Distance (mm) and time to dwell between the pushback
+; AFC_Marco_Cars.cfg line 86 and 87
+global AFC_cut_pushback = {15,20} ; Distance (mm) and time to dwell between the pushback
 
 ; Safety margin for fast vs slow travel. When traveling to the pin location
 ; we make a safer but longer move if we are closer to the pin than this
 ; specified margin. Usually setting these to the size of the toolhead
 ; (plus a small margin) should be good enough 
-global AFC_cut_safe_margin = {30,30} ; X and Y, approx toolhead width +5mm
+; AFC_Marco_Cars.cfg line 93
+global AFC_cut_safe_margin = {30,30} ; X and Y, approx toolhead width +5mm, height +5mm
 
 ; Some printers may need a boost of power to complete the cut without skipping steps.
 ; One option is to increase the current for thost steppers in config.g. Another
@@ -267,6 +289,7 @@ global AFC_cut_safe_margin = {30,30} ; X and Y, approx toolhead width +5mm
 ; different combinations of steppers for that motion.  Set the needed variables.
 ; The override is skipped if the current is 0.
 ; Enable if layer shifts occur when cutting
+; AFC_Marco_Cars.cfg lines 103 and 105
 global AFC_cut_current_stepper = {0,0,0} ; X, Y and Z in mA
 
 ;--=================================================================================-
@@ -274,36 +297,47 @@ global AFC_cut_current_stepper = {0,0,0} ; X, Y and Z in mA
 ;--=================================================================================-
 
 ; Sets the poop location in X and Y
+; AFC_Marco_Cars.cfg line 129
 global AFC_purge_location = {-1,-1} ; X, Y location of where to purge
 
 ; Sets the extrusion speed for the purge
+; AFC_Marco_Cars.cfg line 130
 global AFC_purge_speed = 6.5 ; speed (mm/s) of the purge
 
 ; Set to False to not move in Z during poop
+; AFC_Marco_Cars.cfg line 131
 global AFC_z_purge_move = true 
 
 ; Speed, in mm/s to lift z after the purge is completed. Its a faster lift to keep it from 
 ; sticking to the toolhead
-global AFC_purge_fast_z = {200,20} ; speed (mm/s), distance (mm)
+; height to raise above the final purge position after the purge is completed as part of the fast z move
+; example: If final poop height ends at 20mm this variable will raise Z to 30mm
+; AFC_Marco_Cars.cfg line 135 and 136
+global AFC_purge_fast_z = {200,20} ; speed (mm/s), height (mm)
 
 ; If the toolhead returns to initial position after the poop is complete.
+; AFC_Marco_Cars.cfg line 140
 global AFC_purge_restore = false ; True = return to initial position, False = don't return
 
 ; The height to raise the nozzle above the tray before purging. This allows any built up 
 ; pressure to escape before the purge.
+; AFC_Marco_Cars.cfg line 145
 global AFC_purge_start = 0.6
 
 ; Set the part cooling fan speed. Disabling can help prevent the nozzle from cooling down 
 ; and stimulate flow, Enabling it can prevent blobs from sticking together.
-global AFC_part_cooling_fan = {true,1.0,2} ; Run at full speed, speed to run fan when enabled, time to pause after purge to allow fan to cool the poop (s)
+; AFC_Marco_Cars.cfg line 149 to 151
+global AFC_part_cooling_fan = {true,1.0,2} ; Run at full speed, speed to run fan when enabled (0 to 1.0), time to pause after purge to allow fan to cool the poop (s)
 
 ; ==================== PURGE LENGTH TUNING
 ; Default purge length to fall back on when neither the tool map purge_volumes or 
 ; parameter PURGE_LENGTH is set.
+; AFC_Marco_Cars.cfg line 156 and line 160
 global AFC_purge_length = {72.111,60.999} ; Default purge length (mm), absolute minimum purge length (mm)
 
 ; The slicer values often are a bit too wasteful. Tune it here to get optimal values. 0.6
 ; is a good starting point.
+; AFC_Marco_Cars.cfg line 164
 ;global AFC_purge_length_modifier = 1
 
 ; Length of filament to add after the purge volume. Purge volumes don't always take 
@@ -312,6 +346,7 @@ global AFC_purge_length = {72.111,60.999} ; Default purge length (mm), absolute 
 ;   INCREASE: When the dark to light swaps are good, but light to dark aren't.
 ;   DECREASE: When the light to dark swaps are good, but dark to light aren't. Don't 
 ;     forget to increase the purge_length_modifier
+; AFC_Marco_Cars.cfg line 172
 ;global AFC_purge_length_addition = 0
 
 ;--=================================================================================-
@@ -325,7 +360,8 @@ global AFC_purge_length = {72.111,60.999} ; Default purge length (mm), absolute 
 ; Direction to make the kick move (left, right, front, back)
 ; How far to move to kick poop off
 ; Height of z after kick move
-global AFC_kick = {-1,-1,10,1.5,150,0,"right",45,10}
+; AFC_Marco_Cars.cfg line 182 to 188
+global AFC_kick = {-1,-1,5,1.5,150,0,"right",45,10}
 
 ;--=================================================================================-
 ;------- Brush ---------------------------------------------------------------------
@@ -337,17 +373,20 @@ global AFC_kick = {-1,-1,10,1.5,150,0,"right",45,10}
 ; Total depth in mm of the brush in the Y direction
 ; True - Brush along Y axis first then X. False - Only brush along x
 ; Number of passes to make on the brush.
+; AFC_Marco_Cars.cfg line 199 to 206
 ; Whether the brush is on a servo
 ; Servo pin number
 ; Deployed angle
 ; Retracted angle
 ; Servo number (for M950)
-global AFC_brush = {-1,-1,-1,150,30,10,true,4,false,"0.PE6",110,20,10}
+; brush clean acceleration
+global AFC_brush = {-1,-1,-1,150,30,10,true,4,false,"0.PE6",110,20,10,0}
 
 ;--=================================================================================-
 ;------- Park ----------------------------------------------------------------------
 ;--=================================================================================-
 
+; AFC_Marco_Cars.cfg line 225 to 228
 global AFC_park = {-1,-1,0} ; Park location in X, Y and Z
 
 ;--=================================================================================-
@@ -355,34 +394,41 @@ global AFC_park = {-1,-1,0} ; Park location in X, Y and Z
 ;--=================================================================================-
 
 ; This is the initial press of the filament into the tip before any cooling moves.
+; AFC.cfg line 117
 global AFC_tip_ramming_volume = 0
 
 ; Set this if you would like a temperature reduction during the tip formation.
 ; If using skinny_dip, this change will happen before.
+; AFC.cfg line 121
 global AFC_tip_toolchange_temp = 0
 
 ; This step is split into two different movements. First, a fast move to separate the filament
 ; from the hot zone. Next, a slower movement over the remaining distance of the cooling tube.
+; AFC.cfg line 125 and 126
 global AFC_tip_unloading_speed = {40,15} ; fast speed (mm/s), cooling tube move (mm/s)
 
 ; This stage moves the filament back and forth in the cooling tube section of the hotend.
 ; It helps keep the tip shape uniform with the filament path to prevent clogs.
-global AFC_tip_cooling = {35,10,10,50,4} 
+; AFC.cfg line 130 to 134
 ; Start of the cooling tube in mm.
 ; Length of the move in mm.
 ; Initial movement speed to start solidifying the tip in mm/s.
 ; Fast movement speed in mm/s.
 ; Number of back and forth moves in the cooling tube.
+global AFC_tip_cooling = {35,10,10,50,4} 
 
 ; This is a final move to burn off any hairs possibly on the end of stringy materials like PLA.
 ; If you use this, it should be the last thing you tune after achieving a solid tip shape.
+; AFC.cfg line 138
 global AFC_tip_use_skinnydip = false ; Enable skinny dip moves (for burning off filament hairs).
-global AFC_tip_skinnydip = {30,30,70,0,0}
 ; Distance to reinsert the filament, starting at the end of the cooling tube in mm.
 ; Insertion speed for burning off filament hairs in mm/s.
 ; Extraction speed (set to around 2x the insertion speed) in mm/s.
 ; Pause time in the melt zone in seconds.
 ; Pause time in the cooling zone after the dip in seconds.
+; AFC.cfg line 139 to 143
+global AFC_tip_skinnydip = {30,30,70,0,0}
+
 
 ; ########## DO NOT EDIT PAST HERE!!! ################
 

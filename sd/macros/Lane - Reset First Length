@@ -5,9 +5,13 @@ var lane_number = 0                                                             
 if exists(param.A)                                                                                                    ; Check to see if param.A exists from the BtnCMD call
     set var.lane_number = param.A                                                                                     ; Sets the variable to the lane number
 else 
-    M291 P"Select the lane to be measured" K{"Lane 0","Lane 1","Lane 2","Lane 3"} S4 J1
+    M291 P"Select the lane to be reset" K{"Lane 0","Lane 1","Lane 2","Lane 3","All"} S4 J1
     set var.lane_number = input                                                                                       ; Sets the variable to the chosen lane number
 
-set global.AFC_lane_first_length[{var.lane_number}] = 0                                                               ; Sets the lane first length to 0
+if var.lane_number == 4
+    while iterations < global.AFC_number_of_lanes                                                                     ; iterates for each lane
+        set global.AFC_lane_first_length[{iterations}] = 0
+else
+    set global.AFC_lane_first_length[{var.lane_number}] = 0                                                           ; Sets the lane first length to 0
 echo >"0:/sys/AFC/AFC-info/lane_first_length.g" " ; lane first lengths"                                               ; Writes the information to a file
 echo >>"0:/sys/AFC/AFC-info/lane_first_length.g" "set global.AFC_lane_first_length = " ^ global.AFC_lane_first_length ; Writes the information to a file

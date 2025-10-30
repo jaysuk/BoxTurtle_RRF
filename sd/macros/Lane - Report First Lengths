@@ -1,4 +1,2 @@
-var no_lanes = #global.AFC_lane_first_length    ; Calculates the number of lanes
-
-while iterations < var.no_lanes     ; iterates for each lane
-    M118 S{"Lane "^iterations^" length is "^global.AFC_lane_first_length[iterations]^"mm"}  ; reports the length of each lane to the console output
+while iterations < global.AFC_number_of_lanes                                              ; iterates for each lane
+    M118 S{"Lane "^iterations^" length is "^global.AFC_lane_first_length[iterations]^"mm"} ; reports the length of each lane to the console output

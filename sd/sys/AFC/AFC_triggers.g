@@ -27,7 +27,7 @@ M574 'f1 P{global.AFC_load_switch[var.lane_number]} S1
 G92 'f0
 if !sensors.endstops[{global.om_axis_number}].triggered
     G28 'f0
-    if move.axes[{global.om_axis_number}].homed
+    if sensors.endstops[{global.om_axis_number}].triggered ;move.axes[{global.om_axis_number}].homed
         set global.AFC_lane_loaded[{var.lane_number}]=true
         echo >"0:/sys/AFC/AFC-info/lane_status.g" "; lane status"
         echo >>"0:/sys/AFC/AFC-info/lane_status.g" "set global.AFC_lane_loaded = " ^ global.AFC_lane_loaded

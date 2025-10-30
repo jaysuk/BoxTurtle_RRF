@@ -2,6 +2,7 @@
 
 var lane_number = 0                                                                                                       ; This just initialises the variable
 var total_axis = 0                                                                                                        ; This just initialises the variable
+var internal_max_load_length = 300
 
 if exists(param.A)                                                                                                        ; Check to see if param.A exists from the BtnCMD call
     set var.lane_number = param.A                                                                                         ; Sets the variable to the lane number
@@ -17,7 +18,7 @@ if global.AFC_lane_loaded[var.lane_number]
     G1 'f0 F{global.AFC_load_retract_speed[1]*60}                                                                         ; This retracts the filament to the point where the load switch was triggered
 
     M574 'f2 S1 P{global.AFC_hub_switch}                                                                                  ; This sets the hub switch up as an endstop
-    G1 H4 'f300 F{global.AFC_load_retract_speed[0]*60}                                                                    ; This moves to the hub switch and measures the distance moved
+    G1 H4 'f{var.internal_max_load_length} F{global.AFC_load_retract_speed[0]*60}                                         ; This moves to the hub switch and measures the distance moved
     G91                                                                                                                   ; This sets the system into relative mode
     G1 'f{-global.AFC_hub_retract_distance} F{global.AFC_load_retract_speed[1]*60}                                        ; This retracts the filament by a set amount so its no longer in the hub
     G90                                                                                                                   ; This sets the system into absolute mode
@@ -25,7 +26,7 @@ if global.AFC_lane_loaded[var.lane_number]
     set global.AFC_lane_first_length[{var.lane_number}] = move.axes[{global.om_axis_number}].machinePosition              ; This sets the first length for the lane to the position of the 'f axis
     echo >"0:/sys/AFC/AFC-info/lane_first_length.g" " ; lane first lengths"                                               ; This writes the first length array to a file
     echo >>"0:/sys/AFC/AFC-info/lane_first_length.g" "set global.AFC_lane_first_length = " ^ global.AFC_lane_first_length ; This writes the first length array to a file
-    M118 S{"Lane "^var.lane_number^" has a measured length of "^global.AFC_lane_first_length[{var.lane_number}]^"mm"}
+    M118 S{"Lane "^{var.lane_number}^" has a measured length of "^global.AFC_lane_first_length[{var.lane_number}]^"mm"}
     M574 'f1 S1 P"nil"                                                                                                    ; This frees up the hub switch from being an endstop
     M584 P{var.total_axis-1}                                                                                              ; This hides the axis used for driving the lane
 else
