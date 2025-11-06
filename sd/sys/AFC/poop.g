@@ -28,7 +28,7 @@ if global.AFC_part_cooling_fan[0]
     M400
     M106 S{global.AFC_part_cooling_fan[1]}
 
-set var.backup_feedrate = move.speedFactor
+set var.backup_feedrate = (move.speedFactor * 100)
 M220 S100
 
 ; TODO add handling of slicer driven purge values

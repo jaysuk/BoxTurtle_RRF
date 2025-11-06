@@ -43,7 +43,8 @@ if global.AFC_features[4]
 if global.AFC_features[2]
     M98 P"0:/sys/AFC/kick.g"
 
-set global.AFC_LED_array[{var.lane_number}]=1                                            ; This sets the colour back to green
+set global.AFC_LED_array[{var.lane_number}]=2                                            ; This sets the colour to blue
+M98 P"0:/sys/AFC/LEDs.g"
 M950 J{global.AFC_buffer_input_numbers[0]} C{global.TN_switches[0]}                      ; Advance
 M950 J{global.AFC_buffer_input_numbers[1]} C{global.TN_switches[1]}                      ; Trail
 M581 P{global.AFC_buffer_input_numbers[0]} R1 T{global.AFC_buffer_trigger_numbers[0]} S1 ; TN Advance trigger5.g

@@ -122,6 +122,7 @@ if global.AFC_features[9] == 1
     M400                                                                                                                  ; This waits for all movement to stop
 ; This sets the LED colour back to green
 set global.AFC_LED_array[{var.lane_number}]=1
+M98 P"0:/sys/AFC/LEDs.g"
 
 ; This hides the axes again
 M584 P{var.total_axis-1}
