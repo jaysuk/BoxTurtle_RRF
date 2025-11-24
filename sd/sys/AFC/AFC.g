@@ -1,71 +1,89 @@
-if !exists(global.AFC_settings_loaded)  ; This checks whether the settings have been loaded before. Helpful for when running config checks
-    M98 P"0:/sys/AFC/AFC_vars.g"
-    global AFC_settings_loaded = true
+; === AFC System Initialization (config.g) ===
 
-if fileexists("0:/sys/AFC/AFC_user_vars.g") ; This checks for the existance of user overrides
-    M98 P"0:/sys/AFC/AFC_user_vars.g"
+; --- Configuration Loading ---
+if !exists(global.AFC_settings_loaded)                                             ; Checks if the primary AFC settings have been loaded into global variables.
+    M98 P"0:/sys/AFC/AFC_vars.g"                                                   ; If not loaded, execute AFC_vars.g to define default global settings (e.g., driver numbers, directions, etc.).
+    global AFC_settings_loaded = true                                              ; Set a flag to prevent re-execution of the default settings file on subsequent runs.
+
+if fileexists("0:/sys/AFC/AFC_user_vars.g")                                        ; Checks for the existence of an optional user override file.
+    M98 P"0:/sys/AFC/AFC_user_vars.g"                                              ; If it exists, execute it to load custom settings, overriding any defaults set in AFC_vars.g.
+
+; --- Motor Driver Setup (M569) ---
+; M569: Configure a stepper driver (P parameter specifies the driver).
+; S: Sets the direction (0 for reverse, 1 for forward).
+; This section sets the hardware direction for the four motors/drivers used by the AFC lanes.
+; The specific driver number and direction are read from global variables.
 
 ;######## Motors ################
-M569 P{global.AFC_driver_number[0]} S{global.AFC_stepper_direction[0]}  ; This sets up the direction for lane 0
-M569 P{global.AFC_driver_number[1]} S{global.AFC_stepper_direction[1]} ; This sets up the direction for lane 1
-M569 P{global.AFC_driver_number[2]} S{global.AFC_stepper_direction[2]} ; This sets up the direction for lane 2
-M569 P{global.AFC_driver_number[3]} S{global.AFC_stepper_direction[3]} ; This sets up the direction for lane 3
+while iterations < global.AFC_total_lanes
+    M569 P{global.AFC_driver_number[iterations]} S{global.AFC_stepper_direction[iterations]}             ; Sets up the direction for the motor/driver assigned to each lane
 
-if !exists(global.max_axes)
-    global max_axes=#move.axes
+; --- Axis Count Initialization ---
+if !exists(global.max_axes)                                                        ; Checks if a 'max_axes' global variable is defined.
+    global max_axes=#move.axes                                                     ; If not, initialize it using the total number of movement axes currently configured.
+
+; --- Lane Trigger & Input Setup ---
+; M950: Configure a digital input (endstop, switch, etc.). J is the logical input number, C is the physical pin.
+; M581: Configure an external trigger (run a file when an input changes state). P is the trigger number, T is the input number, S is the action/edge.
 
 ;######## Lane Triggers #########
-M950 J{global.AFC_trigger_input_numbers[0]} C{global.AFC_prep_switch[0]}           ; Lane 0 Prep
-M950 J{global.AFC_trigger_input_numbers[1]} C{global.AFC_prep_switch[1]}           ; Lane 1 Prep
-M950 J{global.AFC_trigger_input_numbers[2]} C{global.AFC_prep_switch[2]}           ; Lane 2 Prep
-M950 J{global.AFC_trigger_input_numbers[3]} C{global.AFC_prep_switch[3]}           ; Lane 3 Prep
-M581 P0 R2 T{global.AFC_trigger_numbers[0]} S1 ; Lane 0 trigger2.g  ; This sets up the lane 0 trigger
-M581 P1 R2 T{global.AFC_trigger_numbers[1]} S1 ; Lane 1 trigger3.g ; This sets up the lane 0 trigger
-M581 P2 R2 T{global.AFC_trigger_numbers[2]} S1 ; Lane 2 trigger4.g ; This sets up the lane 0 trigger
-M581 P3 R2 T{global.AFC_trigger_numbers[3]} S1 ; Lane 3 trigger5.g ; This sets up the lane 0 trigger
+; M950 sets up the digital inputs (switches) used to detect filament presence/prep for each lane.
+while iterations < global.AFC_total_lanes
+    M950 J{global.AFC_trigger_input_numbers[iterations]} C{global.AFC_prep_switch[iterations]}           ; Configure digital input for each Lane Prep Switch
+
+    ; M581 configures the external triggers for the four lanes.
+    ; Px: Trigger number 0-3. R2: Run on rising edge (switch actuation). Sx: Enable/Disable trigger.
+    M581 P{global.AFC_trigger_input_numbers[iterations]} R2 T{global.AFC_trigger_numbers[iterations]} S1 ; Lane triggerx.g  ; This sets up the lane trigger
+
+
+; --- Extruder Motor Configuration (M584, M350, M92, etc.) ---
+; This section configures the primary extruder motor (often E0) and the Lane 0 AFC motor as 'extruders' 
+; to control their movement parameters. The indices suggest a dual-extruder setup is being configured.
 
 ;######## Extruders #################
-M584 E{global.main_extruder[0],global.AFC_driver_number[0]}     ; This maps the current extruder driver and the driver for the correct channel as extruders
-M350 E{global.main_extruder[1],global.AFC_microsteps[0]}    ; This sets the microsteps for both steppers
-M92 E{global.main_extruder[2],global.AFC_steps_per_mm[0]} ; This sets the steps per mm for both steppers
-M906 E{global.main_extruder[6],global.AFC_stepper_current[0]}  ; This sets the current for both steppers
-M566 E{global.main_extruder[3],global.AFC_stepper_jerk[0]*60}                       ; This sets the maximum instantaneous speed changes (mm/min) for both steppers
-M203 E{global.main_extruder[4],global.AFC_stepper_max_speed[0]*60}             ; This sets the maximum speeds (mm/min) for both steppers
-M201 E{global.main_extruder[5],global.AFC_stepper_acc[0]}                         ; This sets the accelerations for both steppers
-M83
+M584 E{global.main_extruder[0],global.AFC_driver_number[0]}                        ; Maps the main extruder driver (index 0) and the Lane 0 motor driver as 'Extruders'.
+M350 E{global.main_extruder[1],global.AFC_microsteps[0]}                           ; Sets the microstepping for both motors/drivers listed as 'Extruders'.
+M92 E{global.main_extruder[2],global.AFC_steps_per_mm[0]}                          ; Sets the steps per millimeter for both motors/drivers.
+M906 E{global.main_extruder[6],global.AFC_stepper_current[0]}                      ; Sets the motor current (Amps) for both motors/drivers.
+M566 E{global.main_extruder[3],global.AFC_stepper_jerk[0]*60}                      ; Sets the maximum instantaneous speed changes (mm/min) for both motors/drivers. (Value multiplied by 60 for min/sec conversion)
+M203 E{global.main_extruder[4],global.AFC_stepper_max_speed[0]*60}                 ; Sets the maximum speeds (mm/min) for both motors/drivers. (Value multiplied by 60 for min/sec conversion)
+M201 E{global.main_extruder[5],global.AFC_stepper_acc[0]}                          ; Sets the acceleration (mm/s^2) for both motors/drivers.
+M83                                                                                ; Sets all extruders to relative mode (E-values are relative movements).
+
+; --- Tool Definition (M563, G10) ---
+; M563: Define a Tool (P#). D# maps extruder drives to the tool.
+; G10: Set Tool Offsets (X,Y,Z) and standby/active temperatures (R, S).
+; Four tools (P0 to P3) are defined, corresponding to the four AFC lanes.
 
 ;######## Tools #################
-M563 P0 D0:1 H{tools[0].heaters[0]} F{tools[0].fans[0]}                               ; define tool 0 used by lane 0
-G10 P0 X0 Y0 Z0                                ; set tool 0 axis offsets
-G10 P0 R0 S0                                   ; set initial tool 0 active and standby temperatures to 0C
+while iterations < global.AFC_total_lanes
+    M563 P{iterations} D0:1 H{tools[0].heaters[0]} F{tools[0].fans[0]}                            ; Define Tool. D0:1 maps Extruder 0 and 1 to this tool. Uses the primary heater/fan settings.
+    G10 P{iterations} X0 Y0 Z0                                                                    ; Set Tool axis offsets to zero.
+    G10 P{iterations} R0 S0                                                                       ; Set Tool standby (R) and active (S) temperatures to 0°C.
 
-M563 P1 D0:1 H{tools[0].heaters[0]} F{tools[0].fans[0]}                               ; define tool 1 used by lane 1
-G10 P1 X0 Y0 Z0                                ; set tool 0 axis offsets
-G10 P1 R0 S0                                   ; set initial tool 0 active and standby temperatures to 0C
+; --- Lane Status & Info Loading ---
+; This loads various files that likely contain the current state/metrics of the AFC system, such as filament used, spool details, and overall status.
 
-M563 P2 D0:1 H{tools[0].heaters[0]} F{tools[0].fans[0]}                               ; define tool 2 used by lane 2
-G10 P2 D0:1 Y0 Z0                                ; set tool 0 axis offsets
-G10 P2 R0 S0                                   ; set initial tool 0 active and standby temperatures to 0C
-
-M563 P3 D0:1 H{tools[0].heaters[0]} F{tools[0].fans[0]}                               ; define tool 3 used by lane 3
-G10 P3 X0 Y0 Z0                                ; set tool 0 axis offsets
-G10 P3 R0 S0                                   ; set initial tool 0 active and standby temperatures to 0C
-
-;######## Lane 0 ################
-if fileexists("0:/sys/AFC/AFC-info/lane_first_length.g")
+;######## Lane Info ################
+if fileexists("0:/sys/AFC/AFC-info/lane_first_length.g")                           ; Load the amount of filament used on the first print with the current spool/lane.
     M98 P"0:/sys/AFC/AFC-info/lane_first_length.g"
-if fileexists("0:/sys/AFC/AFC-info/lane_total_length.g")
+if fileexists("0:/sys/AFC/AFC-info/lane_total_length.g")                           ; Load the total amount of filament used for the current spool/lane.
     M98 P"0:/sys/AFC/AFC-info/lane_total_length.g"
-if fileexists("0:/sys/AFC/AFC-info/lane_status.g")
+if fileexists("0:/sys/AFC/AFC-info/lane_status.g")                                 ; Load the current operational status of the lane (e.g., loaded, empty, error).
     M98 P"0:/sys/AFC/AFC-info/lane_status.g"
-if fileexists("0:/sys/AFC/AFC-info/lane_filament.g")
+if fileexists("0:/sys/AFC/AFC-info/lane_filament.g")                               ; Load details about the filament currently assigned to the lane (e.g., type, color).
     M98 P"0:/sys/AFC/AFC-info/lane_filament.g"
-if fileexists("0:/sys/AFC/AFC-info/spoolman_status.g")
+if fileexists("0:/sys/AFC/AFC-info/spoolman_status.g")                             ; Load status/data from an external spool management system (Spoolman).
     M98 P"0:/sys/AFC/AFC-info/spoolman_status.g"
-set global.AFC_lane_filament_type1 = global.AFC_lane_filament_type
-    
+set global.AFC_lane_filament_type1 = global.AFC_lane_filament_type                 ; Assigns the loaded filament type to a new variable (potentially for Lane 1).
+
+; --- LED Configuration ---
+; M950: Used here to define and configure a Neopixel/RGB LED strip.
+
 ;######## LEDs ##################
 M950 E{global.AFC_neopixel_settings[0]} C{global.AFC_neopixel_pin} T{global.AFC_neopixel_settings[1]} U{global.AFC_neopixel_settings[2]}
-if fileexists("0:/sys/AFC/AFC-info/LEDs.g")
+; M950 sets up the Neopixel strip: E is the logical index, C is the physical pin, T is the type/number of LEDs, U is the colour encoding format.
+
+if fileexists("0:/sys/AFC/AFC-info/LEDs.g")                                        ; Load specific/saved LED state information.
     M98 P"0:/sys/AFC/AFC-info/LEDs.g"
-M98 P"0:/sys/AFC/LEDs.g"
+M98 P"0:/sys/AFC/LEDs.g"                                                           ; Execute the main LED control macro to set the initial strip appearance.

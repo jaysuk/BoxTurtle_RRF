@@ -5,13 +5,13 @@ var lane_number = 0                                                             
 if exists(param.A)                                                                                                    ; Check to see if param.A exists from the BtnCMD call
     set var.lane_number = param.A                                                                                     ; Sets the variable to the lane number
 else 
-    M291 P"Select the lane to be reset" K{"Lane 0","Lane 1","Lane 2","Lane 3","All"} S4 J1
-    set var.lane_number = input                                                                                       ; Sets the variable to the chosen lane number
+    M291 P"Select the lane to be reset" K{global.M291_lane_list_all} S4 J1                                            ; Popup box with options for the lane to reset
+    set var.lane_number = input                                                                                       ; Sets the variable to the chosen lane (4 represents 'All')
 
-if var.lane_number == 4
-    while iterations < global.AFC_number_of_lanes                                                                     ; iterates for each lane
-        set global.AFC_lane_first_length[{iterations}] = 0
+if var.lane_number == 4                                                                                               ; Checks if the user selected 'All'
+    while iterations < global.AFC_total_lanes                                                                         ; Iterates through every available lane
+        set global.AFC_lane_first_length[{iterations}] = 0                                                            ; Resets the length to 0 for the current iteration
 else
-    set global.AFC_lane_first_length[{var.lane_number}] = 0                                                           ; Sets the lane first length to 0
-echo >"0:/sys/AFC/AFC-info/lane_first_length.g" " ; lane first lengths"                                               ; Writes the information to a file
-echo >>"0:/sys/AFC/AFC-info/lane_first_length.g" "set global.AFC_lane_first_length = " ^ global.AFC_lane_first_length ; Writes the information to a file
+    set global.AFC_lane_first_length[{var.lane_number}] = 0                                                           ; Resets the length to 0 for the specific selected lane
+echo >"0:/sys/AFC/AFC-info/lane_first_length.g" " ; lane first lengths"                                               ; Overwrites/Initializes the persistence file
+echo >>"0:/sys/AFC/AFC-info/lane_first_length.g" "set global.AFC_lane_first_length = " ^ global.AFC_lane_first_length ; Saves the updated global array to the file

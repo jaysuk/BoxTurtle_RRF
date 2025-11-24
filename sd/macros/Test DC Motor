@@ -1,0 +1,51 @@
+var lane_number = 0                                                              ; Initialize variable to store the selected lane index
+var direction = "F"                                                              ; Initialize variable for motor direction (default to Forward)
+
+M291 P"Select DC Motor to Test" K{global.M291_lane_list_all} S4 J1               ; Prompt user to select a lane or 'All'
+    set var.lane_number = input                                                  ; Store user selection (index corresponds to lane number or 'All' index)
+
+M291 P"Select the Motor Direction" K{"Forwards", "Reverse", "Both"} S4 J1        ; Prompt user for direction
+    if input == 0                                                                ; User selected Forwards
+        set var.direction = "F"                                                  ; Set direction flag to F
+    elif input == 1                                                              ; User selected Reverse
+        set var.direction = "R"                                                  ; Set direction flag to R
+    elif input == 2                                                              ; User selected Both
+        set var.direction = "B"                                                  ; Set direction flag to B
+
+M291 P"Ready to activate the motor for 5 Seconds?" S3                            ; Confirm action with user (OK/Cancel)
+
+if var.lane_number == global.AFC_total_lanes                                     ; Check if user selected the last option ("All")
+    while iterations < global.AFC_total_lanes                                    ; Loop through every lane to test them sequentially
+        if var.direction != "B"                                                  ; If direction is specific (Forward or Reverse only)
+            M98 P"0:/sys/AFC/Motors/dc_motors.g" A{var.direction} B{iterations}  ; Run DC motor in selected direction
+            M400                                                                 ; Wait for command to execute
+            G4 S5                                                                ; Run motor for 5 seconds
+            M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{iterations}              ; Turn DC motor Off
+        else                                                                     ; If direction is "Both"
+            M98 P"0:/sys/AFC/Motors/dc_motors.g" A"F" B{iterations}              ; Run DC motor Forward
+            M400                                                                 ; Wait for command
+            G4 S5                                                                ; Run for 5 seconds
+            M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{iterations}              ; Turn Off
+            M400                                                                 ; Wait
+            G4 S1                                                                ; Pause for 1 second between direction changes
+            M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{iterations}              ; Run DC motor Reverse
+            M400                                                                 ; Wait for command
+            G4 S5                                                                ; Run for 5 seconds
+            M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{iterations}              ; Turn Off
+else                                                                             ; If user selected a specific single lane
+    if var.direction != "B"                                                      ; If direction is specific
+        M98 P"0:/sys/AFC/Motors/dc_motors.g" A{var.direction} B{var.lane_number} ; Run motor in selected direction
+        M400                                                                     ; Wait for command
+        G4 S5                                                                    ; Run for 5 seconds
+        M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}             ; Turn Off
+    else                                                                         ; If direction is "Both"
+        M98 P"0:/sys/AFC/Motors/dc_motors.g" A"F" B{var.lane_number}             ; Run Forward
+        M400                                                                     ; Wait for command
+        G4 S5                                                                    ; Run for 5 seconds
+        M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}             ; Turn Off
+        M400                                                                     ; Wait
+        G4 S1                                                                    ; Pause for 1 second
+        M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{var.lane_number}             ; Run Reverse
+        M400                                                                     ; Wait for command
+        G4 S5                                                                    ; Run for 5 seconds
+        M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}             ; Turn Off

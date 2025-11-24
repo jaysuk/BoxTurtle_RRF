@@ -1,6 +1,6 @@
-M950 J{global.AFC_hub_input_number} C{global.AFC_hub_switch}
-if sensors.gpIn[global.AFC_hub_input_number].value !=0
-    M118 S"There is filament detected in the hub"
+M950 J{global.AFC_hub_input_number} C{global.AFC_hub_switch} ; Configure the hub switch as a general input sensor (J) using the pin defined in globals
+if sensors.gpIn[global.AFC_hub_input_number].value !=0       ; Check the current state of the input. If != 0 (High/Triggered), filament is present
+    M118 S"There is filament detected in the hub"            ; Send message to DWC console confirming filament presence
 else
-    M118 S"There is not filament detected in the hub"
-M950 J{global.AFC_hub_input_number} C"nil"
+    M118 S"There is not filament detected in the hub"        ; Send message to DWC console confirming filament absence
+M950 J{global.AFC_hub_input_number} C"nil"                   ; Release/Free the physical pin and input index so they can be used by other macros

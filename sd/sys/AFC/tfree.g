@@ -15,124 +15,121 @@
 ; 9 = unload method
 ; 10 = spoolman support
 
-var tfree_time1=0
-var tfree_time=state.upTime
-var time=0
-var time_seconds=0
-var time_minutes=0
-var DC_motor=0
-var retract = 0
-var lane_number = 0
+; --- Variable Initialization ---
+var tfree_time1=0 ; End time of macro (upTime)
+var tfree_time=state.upTime ; Start time of macro (upTime)
+var time=0 ; Total duration in seconds
+var time_seconds=0 ; Calculated remaining seconds
+var time_minutes=0 ; Calculated minutes
+var DC_motor=0 ; Flag for DC motor assistance
+var retract = 0 ; Filament retract distance variable
+var lane_number = 0 ; Index of the lane being freed
 
-if exists(param.A)
-    set var.lane_number = param.A
+; --- Determine Lane Number ---
+if exists(param.A) ; Check if lane number parameter was passed
+    set var.lane_number = param.A ; Assign parameter to local variable
+if !exists(param.A) ; If parameter is missing
+    set var.lane_number = state.currentTool ; Use the currently active tool index
 
-if !exists(param.A)
-    set var.lane_number = state.currentTool
+; --- Spoolman Support ---
+if global.AFC_features[10] == 1 ; Check if Spoolman feature is enabled
+    set global.spoolman_capture_extrusion[{var.lane_number}] = false ; Disable extrusion tracking for this lane
 
-if global.AFC_features[10] == 1
-    set global.spoolman_capture_extrusion[{var.lane_number}] = false
+; --- Homing Check ---
+if !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed ; Verify all axes are homed
+    G28 ; Perform homing if necessary
 
-if !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed                                                      ; checks if the printer is homed
-	G28                                                                                                                   ; home the printer
+; --- Feature Execution (Cut/Park) ---
+if !exists(param.C) ; If not ignoring movement commands
+    if global.AFC_features[1] ; Check if Cut feature is enabled
+        M98 P"0:/sys/AFC/cut.g" ; Execute filament cutting macro
+    if global.AFC_features[3] ; Check if Park feature is enabled
+        M98 P"0:/sys/AFC/park.g" ; Execute toolhead parking macro
 
-if !exists(param.C)
-    if global.AFC_features[1]   ; Do a check to see if the cut feature has been enabled. If so, run it
-        M98 P"0:/sys/AFC/cut.g"
-
-    if global.AFC_features[3]   ; Do a check to see if the park feature has been enabled. If so, run it
-        M98 P"0:/sys/AFC/park.g"
-
-if !exists(param.A)
-    echo "Missing the lane number"
-    abort
-
-var total_axis = #move.axes
-if global.AFC_features[1]
-    set var.retract = global.main_extruder_measurements[1]+5
+var total_axis = #move.axes ; Capture total axis count for cleanup later
+if global.AFC_features[1] ; Check if Cut feature is enabled
+    set var.retract = global.main_extruder_measurements[1]+5 ; Set longer retract distance for cut scenario
 else
-    set var.retract = global.main_extruder_measurements[0]+5
+    set var.retract = global.main_extruder_measurements[0]+5 ; Set standard retract distance
 
-if !exists(param.C)
-    var current_temp = tools[{var.lane_number}].active[0]
+if !exists(param.C) ; If not ignoring moves (Unused variable in snippet)
+    var current_temp = tools[{var.lane_number}].active[0] ; Capture current tool temperature
 
-if exists(param.B)
-    set var.DC_motor=param.B
+if exists(param.B) ; Check if DC motor parameter was passed
+    set var.DC_motor=param.B ; Set local DC motor flag
 else
-    set var.DC_motor=0
+    set var.DC_motor=0 ; Default DC motor to off
 
-; This is for feeding the filament away from the extruder and back into the lane
+; --- Buffer Management (Disarm Sensors) ---
+if !exists(param.C) ; If not ignoring moves
+    M581 P{global.AFC_buffer_input_numbers[0]} R-1 T{global.AFC_buffer_trigger_numbers[0]} ; Disable 'Advance' buffer trigger
+    M581 P{global.AFC_buffer_input_numbers[1]} R-1 T{global.AFC_buffer_trigger_numbers[1]} ; Disable 'Trail' buffer trigger
+    M400 ; Wait for command execution
+    M950 J{global.AFC_buffer_input_numbers[0]} C"nil" ; Unmap 'Advance' buffer pin
+    M950 J{global.AFC_buffer_input_numbers[1]} C"nil" ; Unmap 'Trail' buffer pin
 
-if !exists(param.C)
-; Disable the buffer
-    M581 P{global.AFC_buffer_input_numbers[0]} R-1 T{global.AFC_buffer_trigger_numbers[0]}
-    M581 P{global.AFC_buffer_input_numbers[1]} R-1 T{global.AFC_buffer_trigger_numbers[1]}
-    M400
-    M950 J{global.AFC_buffer_input_numbers[0]} C"nil"                                                                     ; Advance
-    M950 J{global.AFC_buffer_input_numbers[1]} C"nil"                                                                     ; Trail
+; --- LED Status Update ---
+set global.AFC_LED_array[{var.lane_number}]=2 ; Set lane LED to Blue (Busy/Active)
 
-; This sets the colour of for this lane to blue to indicate a tool change is being under taken
-set global.AFC_LED_array[{var.lane_number}]=2
+; --- Hotend Retraction ---
+M83 ; Ensure relative extrusion mode
+G1 E{-var.retract} F600 ; Retract filament from hotend melt zone
+M400 ; Wait for move completion
 
-;M98 P"0:/sys/AFC/Motors/Extruder_setup.g" A{param.A} B1 ; setup the mixing extruder
+; --- Hardware Unmapping ---
+M591 D1 P0 ; Disable filament monitor D1
+M98 P"0:/sys/AFC/Motors/Extruder_setup.g" A{var.lane_number} B0 ; Unmap extruder drive for this lane
+M98 P"0:/sys/AFC/Motors/Axis_setup.g" A{var.lane_number} ; Map lane motor to temporary axis
+G92 'f{global.AFC_lane_total_length[var.lane_number]} ; Set temporary 'F' axis position to known length
 
-; This move retracts the filament out of the extruder
-M83
-G1 E{-var.retract} F600
-M400
+; --- Main Retraction Sequence ---
+if var.DC_motor==1 ; If DC motor assist is enabled
+    M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{var.lane_number} ; Activate DC motor in Reverse
+    M400 ; Wait for activation
 
-; This is to unmap the filament monitor
-M591 D1 P0
-
-; This is to unmap the extruder
-M98 P"0:/sys/AFC/Motors/Extruder_setup.g" A{var.lane_number} B0
-
-M98 P"0:/sys/AFC/Motors/Axis_setup.g" A{var.lane_number}
-
-G92 'f{global.AFC_lane_total_length[var.lane_number]}
-
-; This is for retracting the filament out of the tube
-if var.DC_motor==1
-    M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{var.lane_number}                       ; This sets the DC motor in reverse to wind the filament up
-    M400
+; Unload Method 0: Sensor-based Retraction
 if global.AFC_features[9] == 0
-    M574 'f1 P{"!"^global.AFC_hub_switch} S1 
-    G92 'f20000
-    G1 H4 'f-20000 F{global.AFC_load_retract_speed[1]*60} ; This retracts the filament
-    G91
-    G1 'f{-global.AFC_hub_retract_distance} F{global.AFC_load_retract_speed[1]*60}
-    G90
-    M574 'f1 P"nil" S1
-    M400
+    M574 'f1 P{"!"^global.AFC_hub_switch} S1 ; Configure F-axis endstop to inverted hub switch
+    G92 'f20000 ; Preset F position
+    G1 H4 'f-20000 F{global.AFC_load_retract_speed[1]*60} ; Homing move to retract until hub sensor triggers
+    G91 ; Relative positioning
+    G1 'f{-global.AFC_hub_retract_distance} F{global.AFC_load_retract_speed[1]*60} ; Retract further to clear hub
+    G90 ; Absolute positioning
+    M574 'f1 P"nil" S1 ; Clear F-axis endstop configuration
+    M400 ; Wait for moves
+
+; Unload Method 1: Distance-based Retraction
 elif global.AFC_features[9] == 1
-    G92 'f{global.AFC_lane_total_length[var.lane_number]}
-    M400
-    G1 'f{global.AFC_lane_first_length[{var.lane_number}]} F{global.AFC_load_retract_speed[1]*60}
-M400
-if var.DC_motor==1
-    M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}                       ; This turns the DC motor off
-M400
-if global.AFC_features[9] == 1
-    M574 'f2 S1 P{global.AFC_hub_switch}                                                                                  ; This sets the hub switch up as an endstop
-    G1 H4 'f300 F{global.AFC_load_retract_speed[0]*60}                                                                                  ; This moves to the hub switch and measures the distance moved
-    G91                                                                                                                   ; This sets the system into relative mode
-    G1 'f{-global.AFC_hub_retract_distance+10} F{global.AFC_load_retract_speed[1]*60}                                                   ; This retracts the filament by a set amount so its no longer in the hub
-    G90                                                                                                                   ; This sets the system into absolute mode
-    M574 'f1 P"nil" S1
-    M400                                                                                                                  ; This waits for all movement to stop
-; This sets the LED colour back to green
-set global.AFC_LED_array[{var.lane_number}]=1
-M98 P"0:/sys/AFC/LEDs.g"
+    G92 'f{global.AFC_lane_total_length[var.lane_number]} ; Reset F position
+    M400 ; Wait
+    G1 'f{global.AFC_lane_first_length[{var.lane_number}]} F{global.AFC_load_retract_speed[1]*60} ; Retract to 'first load' position
+M400 ; Wait
 
-; This hides the axes again
-M584 P{var.total_axis-1}
+if var.DC_motor==1 ; If DC motor was used
+    M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number} ; Turn off DC motor
+M400 ; Wait
 
-M400
+; --- Safety Check (Method 1 Only) ---
+if global.AFC_features[9] == 1 ; If distance-based method was used
+    M574 'f2 S1 P{global.AFC_hub_switch} ; Set F max endstop to hub switch
+    G1 H4 'f300 F{global.AFC_load_retract_speed[0]*60} ; Short homing move forward to verify sensor state
+    G91 ; Relative positioning
+    G1 'f{-global.AFC_hub_retract_distance+10} F{global.AFC_load_retract_speed[1]*60} ; Final clearing retract
+    G90 ; Absolute positioning
+    M574 'f1 P"nil" S1 ; Clear endstop
+    M400 ; Wait
 
-set var.tfree_time1=state.upTime
-set var.time=var.tfree_time1-var.tfree_time
-set var.time_minutes=floor(var.time/60)
-set var.time_seconds=var.time-(var.time_minutes*60)
+; --- Final Cleanup ---
+set global.AFC_LED_array[{var.lane_number}]=1 ; Set lane LED to Green (Ready)
+M98 P"0:/sys/AFC/LEDs.g" ; Update physical LEDs
+M584 P{var.total_axis-1} ; Hide temporary 'F' axis
+M400 ; Wait
 
-if !exists(param.C)
-    echo "The tool unload time was "^var.time^" seconds ("^var.time_minutes^" minutes and "^var.time_seconds^" seconds)"
+; --- Time Calculation and Output ---
+set var.tfree_time1=state.upTime ; Capture finish time
+set var.time=var.tfree_time1-var.tfree_time ; Calculate total seconds
+set var.time_minutes=floor(var.time/60) ; Calculate minutes
+set var.time_seconds=var.time-(var.time_minutes*60) ; Calculate remaining seconds
+
+if !exists(param.C) ; If output is not suppressed
+    echo "The tool unload time was "^var.time^" seconds ("^var.time_minutes^" minutes

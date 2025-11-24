@@ -1,18 +1,18 @@
 ; param.A - This has been added to allow BtnCMD to call this macro for a specific lane
 
-var lane_number = 0                                                                                     ; This just initialises the variable
+var lane_number = 0                                                                                     ; Initialize local variable for the lane number
 
-if exists(param.A)                                                                                      ; Check to see if param.A exists from the BtnCMD call
-    set var.lane_number = param.A                                                                       ; Sets the variable to the lane number
+if exists(param.A)                                                                                      ; Check if the lane number was passed as a parameter (e.g. from BtnCMD)
+    set var.lane_number = param.A                                                                       ; Set the local variable to the passed parameter value
 else
-    M291 P"Select the lane to be measured" K{"Lane 0","Lane 1","Lane 2","Lane 3"} S4 J1                 ; Popup box with options for the lane to unload
-    set var.lane_number=input                                                                           ; Sets the variable to the chosen lane
+    M291 P"Select the lane to be measured" K{global.M291_lane_list} S4 J1                               ; Display popup for manual lane selection
+    set var.lane_number=input                                                                           ; Store the user's selection in the local variable
 
-if global.AFC_lane_loaded[{var.lane_number}]                                                            ; Checks to see if the lane is marked as loaded
-    set global.AFC_lane_loaded[{var.lane_number}] = false                                               ; Sets the lane status to unloaded
-    echo >"0:/sys/AFC/AFC-info/lane_status.g" " ; lane status"                                          ; Writes the lane status to a file
-    echo >>"0:/sys/AFC/AFC-info/lane_status.g" "set global.AFC_lane_loaded = " ^ global.AFC_lane_loaded ; Writes the lane status to a file
-    set global.AFC_LED_array[{var.lane_number}] = 0                                                     ; Sets the LED colour to 0
-    M98 P"0:/sys/AFC/LEDs.g"                                                                            ; Runs the LED script which in this instance turns the LED red
+if global.AFC_lane_loaded[{var.lane_number}]                                                            ; Check if the selected lane is currently marked as 'Loaded' in globals
+    set global.AFC_lane_loaded[{var.lane_number}] = false                                               ; Update global status to 'Unloaded' (False)
+    echo >"0:/sys/AFC/AFC-info/lane_status.g" " ; lane status"                                          ; Overwrite/Initialize the persistence file
+    echo >>"0:/sys/AFC/AFC-info/lane_status.g" "set global.AFC_lane_loaded = " ^ global.AFC_lane_loaded ; Append the updated global array to the file for persistence
+    set global.AFC_LED_array[{var.lane_number}] = 0                                                     ; Update LED status array to 0 (Red/Empty)
+    M98 P"0:/sys/AFC/LEDs.g"                                                                            ; Execute the LED macro to update the physical lights
 else
-    M118 S{"Lane "^{var.lane_number}^" is not marked as loaded"}                                        ; Sends a message with the lane number
+    M118 S{"Lane "^{var.lane_number}^" is not marked as loaded"}                                        ; Send message to console if lane was already unloaded

@@ -11,69 +11,69 @@
 ; 9 = unload method
 ; 10 = spoolman support
 
-var lane_number=0
-var first_length=0
-var additional_length=0
-var total_length=0
+var lane_number=0                                                                                                     ; Initialize variable to store selected lane
+var first_length=0                                                                                                    ; Initialize variable for the initial load length
+var additional_length=0                                                                                               ; Initialize variable for the extra length beyond the hub
+var total_length=0                                                                                                    ; Initialize variable for total measured length
 
-M950 J{global.AFC_hub_input_number} C{global.AFC_hub_switch}
-if sensors.gpIn[global.AFC_hub_input_number].value !=0
-    M291 S2 P"There is filament loaded to the printer through the hub, aborting macro" R"Warning"
-    M950 J{global.AFC_hub_input_number} C"nil"
-    abort
+M950 J{global.AFC_hub_input_number} C{global.AFC_hub_switch}                                                          ; Define the hub switch pin
+if sensors.gpIn[global.AFC_hub_input_number].value !=0                                                                ; Check if filament is detected in the hub (assuming !=0 means present)
+    M291 S2 P"There is filament loaded to the printer through the hub, aborting macro" R"Warning"                     ; Warn user if path is blocked
+    M950 J{global.AFC_hub_input_number} C"nil"                                                                        ; Free the hub switch pin
+    abort                                                                                                             ; Stop execution
 
-M291 P"Select the lane use to measure the overall length" K{"Lane 0","Lane 1","Lane 2","Lane 3"} S4 J1
-if (input == 0 || input == 1 || input == 2 || input == 3)
-    set var.lane_number=input
-    set var.first_length=global.AFC_lane_first_length[{input}]
+M291 P"Select the lane use to measure the overall length" K{global.M291_lane_list} S4 J1                              ; Prompt user to pick a lane
+if (input == 0 || input == 1 || input == 2 || input == 3)                                                             ; Validate input
+    set var.lane_number=input                                                                                         ; Store selected lane number
+    set var.first_length=global.AFC_lane_first_length[{input}]                                                        ; Retrieve the pre-measured first length for this lane
 
-echo "this is lane number " ^ var.lane_number
+echo "this is lane number " ^ var.lane_number                                                                         ; Output debug info
 
-M584 P{#move.axes}
+M584 P{#move.axes}                                                                                                    ; Reset visible axes to current count
 
-M98 P"0:/sys/AFC/Motors/Axis_setup.g" A{var.lane_number}
+M98 P"0:/sys/AFC/Motors/Axis_setup.g" A{var.lane_number}                                                              ; Configure the motor for the selected lane as an axis
 
-var total_axis=#move.axes
+var total_axis=#move.axes                                                                                             ; Capture total axis count after setup
 
-if (global.AFC_features[6] == 0 || global.AFC_features[6] == 1)   
-    M574 'f2 S1 P{global.TN_switches[0]}
-    M400
-    G92 'f{var.first_length}
-    echo var.first_length
-    M400
-    G1 H4 'f{global.AFC_max_load_length} F{global.AFC_load_retract_speed[0]*60}
-    G91
-    G1 H2 'f{-global.AFC_tn_retract_distance} F{global.AFC_load_retract_speed[1]*60}
-    G90
-    M400
-    M574 'f2 S1 P"nil"
-if global.AFC_features[6] == 2  
-    M574 'f2 P{global.extruder_switches[0]} S1                                                                        ; set pre-extruder input pin as endstop for 'f
-    M400
-    G92 'f{var.first_length}
-    echo var.first_length
-    M400
-    G1 H4 'f{global.AFC_max_load_length} F{global.AFC_load_retract_speed[0]*60}
-    M400
-    M574 'f2 S1 P"nil"
+if (global.AFC_features[6] == 0 || global.AFC_features[6] == 1)                                                       ; Check load method (0 or 1 uses TN switches)
+    M574 'f2 S1 P{global.TN_switches[0]}                                                                              ; Set F-axis max endstop to TN switch
+    M400                                                                                                              ; Wait for command
+    G92 'f{var.first_length}                                                                                          ; Set current position to the known first length
+    echo var.first_length                                                                                             ; Debug output
+    M400                                                                                                              ; Wait
+    G1 H4 'f{global.AFC_max_load_length} F{global.AFC_load_retract_speed[0]*60}                                       ; Home forward to find TN switch
+    G91                                                                                                               ; Relative positioning
+    G1 H2 'f{-global.AFC_tn_retract_distance} F{global.AFC_load_retract_speed[1]*60}                                  ; Retract to park position relative to switch
+    G90                                                                                                               ; Absolute positioning
+    M400                                                                                                              ; Wait
+    M574 'f2 S1 P"nil"                                                                                                ; Free the endstop pin
+if global.AFC_features[6] == 2                                                                                        ; Check load method 2 (uses Extruder switch)
+    M574 'f2 P{global.extruder_switches[0]} S1                                                                        ; Set F-axis max endstop to extruder switch
+    M400                                                                                                              ; Wait
+    G92 'f{var.first_length}                                                                                          ; Set current position
+    echo var.first_length                                                                                             ; Debug output
+    M400                                                                                                              ; Wait
+    G1 H4 'f{global.AFC_max_load_length} F{global.AFC_load_retract_speed[0]*60}                                       ; Home forward to find extruder switch
+    M400                                                                                                              ; Wait
+    M574 'f2 S1 P"nil"                                                                                                ; Free the endstop pin
 
 ; ###### write measured distance ########
-set var.total_length=move.axes[{global.om_axis_number}].machinePosition
-set var.additional_length={var.total_length-global.AFC_lane_first_length[{var.lane_number}]}
-set global.AFC_lane_total_length[0]={var.additional_length+global.AFC_lane_first_length[0]}
-set global.AFC_lane_total_length[1]={var.additional_length+global.AFC_lane_first_length[1]}
-set global.AFC_lane_total_length[2]={var.additional_length+global.AFC_lane_first_length[2]}
-set global.AFC_lane_total_length[3]={var.additional_length+global.AFC_lane_first_length[3]}
+set var.total_length=move.axes[{global.om_axis_number}].machinePosition                                               ; Capture the final axis position
+set var.additional_length={var.total_length-global.AFC_lane_first_length[{var.lane_number}]}                          ; Calculate the length from hub to endstop
+set global.AFC_lane_total_length[0]={var.additional_length+global.AFC_lane_first_length[0]}                           ; Update total length for Lane 0
+set global.AFC_lane_total_length[1]={var.additional_length+global.AFC_lane_first_length[1]}                           ; Update total length for Lane 1
+set global.AFC_lane_total_length[2]={var.additional_length+global.AFC_lane_first_length[2]}                           ; Update total length for Lane 2
+set global.AFC_lane_total_length[3]={var.additional_length+global.AFC_lane_first_length[3]}                           ; Update total length for Lane 3
  
-echo >"0:/sys/AFC/AFC-info/lane_total_length.g" "; lane first lengths"
-echo >>"0:/sys/AFC/AFC-info/lane_total_length.g" "set global.AFC_lane_total_length = " ^ global.AFC_lane_total_length
-M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{var.lane_number}
-M400   
-G1 'f{global.AFC_lane_first_length[{var.lane_number}]} F{global.AFC_load_retract_speed[1]*60}
-M400
-M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}    
-M400 
-M584 P{var.total_axis-1}
+echo >"0:/sys/AFC/AFC-info/lane_total_length.g" "; lane first lengths"                                                ; Initialize persistence file
+echo >>"0:/sys/AFC/AFC-info/lane_total_length.g" "set global.AFC_lane_total_length = " ^ global.AFC_lane_total_length ; Save array to file
+M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{var.lane_number}                                                          ; Enable DC motor in reverse
+M400                                                                                                                  ; Wait
+G1 'f{global.AFC_lane_first_length[{var.lane_number}]} F{global.AFC_load_retract_speed[1]*60}                         ; Retract filament back to first length position
+M400                                                                                                                  ; Wait
+M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}                                                          ; Turn off DC motor
+M400                                                                                                                  ; Wait
+M584 P{var.total_axis-1}                                                                                              ; Hide the temporary axis
 
-while iterations < global.AFC_number_of_lanes 
-    M118 S{"Lane "^iterations^" length is "^global.AFC_lane_total_length[iterations]^"mm"}
+while iterations < global.AFC_total_lanes                                                                             ; Loop through lanes to report lengths
+    M118 S{"Lane "^iterations^" length is "^global.AFC_lane_total_length[iterations]^"mm"}                            ; Output length to console

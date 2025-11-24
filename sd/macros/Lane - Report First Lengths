@@ -1,2 +1,2 @@
-while iterations < global.AFC_number_of_lanes                                              ; iterates for each lane
-    M118 S{"Lane "^iterations^" length is "^global.AFC_lane_first_length[iterations]^"mm"} ; reports the length of each lane to the console output
+while iterations < global.AFC_total_lanes                                                  ; Loop through each lane using the built-in iteration counter
+    M118 S{"Lane "^iterations^" length is "^global.AFC_lane_first_length[iterations]^"mm"} ; Output the stored 'first length' measurement for the current lane to the console
