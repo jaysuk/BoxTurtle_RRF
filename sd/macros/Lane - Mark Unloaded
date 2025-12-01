@@ -1,18 +1,42 @@
-; param.A - This has been added to allow BtnCMD to call this macro for a specific lane
+; ==========================================================================================
+; Mark Lane as Empty / Unloaded
+; Manually resets the status flag of a lane to "False" and updates LEDs/Persistence.
+; ==========================================================================================
 
-var lane_number = 0                                                                                     ; Initialize local variable for the lane number
+var lane_number = 0
+var manual_trigger = false ; Track if this was triggered by a human or a button/script
 
-if exists(param.A)                                                                                      ; Check if the lane number was passed as a parameter (e.g. from BtnCMD)
-    set var.lane_number = param.A                                                                       ; Set the local variable to the passed parameter value
+; --- Input Logic ---
+if exists(param.A)
+    set var.lane_number = param.A
+    set var.manual_trigger = false
 else
-    M291 P"Select the lane to be measured" K{global.M291_lane_list} S4 J1                               ; Display popup for manual lane selection
-    set var.lane_number=input                                                                           ; Store the user's selection in the local variable
+    M291 P"Select the lane to mark as Empty" K{global.M291_lane_list} S4 J1
+    set var.lane_number = input
+    set var.manual_trigger = true
 
-if global.AFC_lane_loaded[{var.lane_number}]                                                            ; Check if the selected lane is currently marked as 'Loaded' in globals
-    set global.AFC_lane_loaded[{var.lane_number}] = false                                               ; Update global status to 'Unloaded' (False)
-    echo >"0:/sys/AFC/AFC-info/lane_status.g" " ; lane status"                                          ; Overwrite/Initialize the persistence file
-    echo >>"0:/sys/AFC/AFC-info/lane_status.g" "set global.AFC_lane_loaded = " ^ global.AFC_lane_loaded ; Append the updated global array to the file for persistence
-    set global.AFC_LED_array[{var.lane_number}] = 0                                                     ; Update LED status array to 0 (Red/Empty)
-    M98 P"0:/sys/AFC/LEDs.g"                                                                            ; Execute the LED macro to update the physical lights
+; --- Status Check & Execution ---
+if global.AFC_lane_loaded[{var.lane_number}]
+    
+    ; Safety Check: Only ask for confirmation if manually triggered (S3 = OK/Cancel)
+    if var.manual_trigger
+        M291 P{"Mark Lane " ^ var.lane_number ^ " as Empty? This resets the status."} R"Confirm Reset" S3
+    
+    ; Update Global Variable
+    set global.AFC_lane_loaded[{var.lane_number}] = false
+    
+    ; Update Persistence File
+    echo >"0:/sys/AFC/AFC-info/lane_status.g" " ; lane status"
+    echo >>"0:/sys/AFC/AFC-info/lane_status.g" "set global.AFC_lane_loaded = " ^ global.AFC_lane_loaded
+    
+    ; Update LEDs (Set to Red/Empty)
+    set global.AFC_LED_array[{var.lane_number}] = 0
+    M98 P"0:/sys/AFC/LEDs.g"
+    
+    ; Success Message (S1 T3 = Green toast message for 3 seconds)
+    M291 P{"Lane " ^ var.lane_number ^ " is now marked as Empty."} R"Success" S1 T3
+
 else
-    M118 S{"Lane "^{var.lane_number}^" is not marked as loaded"}                                        ; Send message to console if lane was already unloaded
+    ; Error/Info Message (S2 = Red/Warning tone)
+    ; Changed from M118 (Console) to M291 (Popup) so the user definitely sees it.
+    M291 P{"Lane " ^ var.lane_number ^ " is already marked as Empty."} R"Notice" S2 T3
