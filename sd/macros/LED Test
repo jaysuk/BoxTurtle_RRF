@@ -1,0 +1,110 @@
+; ==========================================================================================
+; AFC LED Test Macro
+; Tests individual lanes or all lanes by cycling R-G-B-W, then restores system state.
+; ==========================================================================================
+
+; --- Initialization ---
+var lane_number = 0           ; Index to store the user-selected lane
+var red = 0
+var green = 0
+var blue = 0
+var test_phase = 0            ; Variable to track which color we are testing (0=R, 1=G, 2=B, 3=W)
+
+; --- User Input: Lane Selection ---
+M291 P"Select LED Lane to Test" K{global.M291_lane_list_all} S4 J1 
+set var.lane_number = input   ; Store the result (index matches lane number, last index is 'All')
+
+M291 P"Starting LED Test Sequence..." R"Testing" S1 T2
+
+; ==========================================================================================
+; Test Loop: Cycle through Colors (Red, Green, Blue, White)
+; ==========================================================================================
+
+while var.test_phase < 4
+    ; --- Determine Color for this Phase ---
+    if var.test_phase == 0         ; RED Phase
+        set var.red = 255
+        set var.green = 0
+        set var.blue = 0
+    elif var.test_phase == 1       ; GREEN Phase
+        set var.red = 0
+        set var.green = 255
+        set var.blue = 0
+    elif var.test_phase == 2       ; BLUE Phase
+        set var.red = 0
+        set var.green = 0
+        set var.blue = 255
+    elif var.test_phase == 3       ; WHITE Phase
+        set var.red = 255
+        set var.green = 255
+        set var.blue = 255
+
+    ; --- Apply Color to Strip ---
+    ; We loop through ALL pixels. If the pixel matches our selection, we color it.
+    ; If it doesn't match, we turn it OFF (to isolate the test).
+    
+    while iterations < global.AFC_neopixel_settings[2]
+        
+        ; Check if this pixel is the one selected OR if "All" (last index) was selected
+        if iterations == var.lane_number || var.lane_number == global.AFC_total_lanes
+            ; Apply the test color
+            if iterations < (global.AFC_neopixel_settings[2] - 1)
+                M150 E{global.AFC_neopixel_settings[0]} R{var.red} U{var.green} B{var.blue} W0 F1
+            else
+                M150 E{global.AFC_neopixel_settings[0]} R{var.red} U{var.green} B{var.blue} W0 F0
+        else
+            ; Turn this pixel OFF (it is not part of the test)
+            if iterations < (global.AFC_neopixel_settings[2] - 1)
+                M150 E{global.AFC_neopixel_settings[0]} R0 U0 B0 W0 F1
+            else
+                M150 E{global.AFC_neopixel_settings[0]} R0 U0 B0 W0 F0
+    
+    ; Wait 1 second before next color
+    G4 S1
+    
+    ; Increment phase
+    set var.test_phase = var.test_phase + 1
+
+; ==========================================================================================
+; Restore State
+; Re-run the logic from the Basis Macro to reset LEDs to their known system status
+; ==========================================================================================
+
+M291 P"Test Complete. Restoring System State." R"Done" S1 T2
+
+while iterations < global.AFC_neopixel_settings[2]
+    ; --- Color Assignment based on Status Code (From Basis Macro) ---
+    if global.AFC_LED_array[iterations] == 0       ; Error/Empty (Red)
+        set var.red=255
+        set var.green=0
+        set var.blue=0
+    if global.AFC_LED_array[iterations] == 1       ; Ready/Loaded (Green)
+        set var.red=0
+        set var.green=255
+        set var.blue=0
+    if global.AFC_LED_array[iterations] == 2       ; Loaded/Active (Blue)
+        set var.red=0
+        set var.green=0
+        set var.blue=255
+    if global.AFC_LED_array[iterations] == 3       ; General (White)
+        set var.red=255
+        set var.green=255
+        set var.blue=255
+    if global.AFC_LED_array[iterations] == 4       ; Warning (Yellow)
+        set var.red=255
+        set var.green=128
+        set var.blue=0
+    if global.AFC_LED_array[iterations] == 5       ; Pending (Magenta)
+        set var.red=255
+        set var.green=0
+        set var.blue=128
+    if global.AFC_LED_array[iterations] == 6       ; Disabled (Cyan)
+        set var.red=0
+        set var.green=255
+        set var.blue=255
+
+    ; --- Send Command ---
+    if iterations < (global.AFC_neopixel_settings[2] - 1)
+        M150 E{global.AFC_neopixel_settings[0]} R{var.red} U{var.green} B{var.blue} W0 F1
+    else
+        M150 E{global.AFC_neopixel_settings[0]} R{var.red} U{var.green} B{var.blue} W0 F0
