@@ -1,6 +1,39 @@
-M950 J{global.AFC_hub_input_number} C{global.AFC_hub_switch} ; Configure the hub switch as a general input sensor (J) using the pin defined in globals
-if sensors.gpIn[global.AFC_hub_input_number].value !=0       ; Check the current state of the input. If != 0 (High/Triggered), filament is present
-    M118 S"There is filament detected in the hub"            ; Send message to DWC console confirming filament presence
-else
-    M118 S"There is not filament detected in the hub"        ; Send message to DWC console confirming filament absence
-M950 J{global.AFC_hub_input_number} C"nil"                   ; Release/Free the physical pin and input index so they can be used by other macros
+; ==========================================================================================
+; AFC Hub Switch Diagnostic Tool
+; guides the user to manually trigger/untrigger the switch to verify functionality.
+; ==========================================================================================
+
+; --- 1. Configuration ---
+; Configure the hub switch as a general input sensor (J) using the pin defined in globals.
+; We configure it now so we can read the state 'sensors.gpIn[...].value' below.
+M950 J{global.AFC_hub_input_number} C{global.AFC_hub_switch} 
+
+; --- 2. Test "Empty" State ---
+; Prompt user to remove filament. Script pauses here until user clicks "OK".
+M291 P"Please REMOVE filament from the Hub to test the 'Empty' state." R"Hub Switch Test (1/2)" S3
+
+; Check the sensor value. 
+; Assuming: 0 = Open/Empty, 1 = Triggered/Full. 
+; (If your logic is inverted, swap the 0 and 1 in the checks below).
+if sensors.gpIn[global.AFC_hub_input_number].value != 0
+    ; FAIL STATE: User said it's empty, but sensor reads 1 (Present)
+    M291 P"Test Failed: Sensor still reads 'Filament Present' when empty. Check wiring or obstructions." R"Failure" S2
+    M950 J{global.AFC_hub_input_number} C"nil" ; Free the pin
+    abort ; Exit the macro immediately
+
+; --- 3. Test "Present" State ---
+; Prompt user to insert filament. Script pauses here until user clicks "OK".
+M291 P"Please INSERT filament into the Hub to test the 'Detected' state." R"Hub Switch Test (2/2)" S3
+
+if sensors.gpIn[global.AFC_hub_input_number].value == 0
+    ; FAIL STATE: User inserted filament, but sensor reads 0 (Empty)
+    M291 P"Test Failed: Sensor reads 'Empty' while filament is inserted. Check wiring or switch positioning." R"Failure" S2
+    M950 J{global.AFC_hub_input_number} C"nil" ; Free the pin
+    abort ; Exit the macro immediately
+
+; --- 4. Success & Cleanup ---
+; If the script reaches this line, both tests passed.
+M291 P"Success! The Hub Switch correctly detected both states." R"Test Passed" S1 T5
+
+; Release/Free the physical pin and input index so they can be used by other macros/system
+M950 J{global.AFC_hub_input_number} C"nil"
