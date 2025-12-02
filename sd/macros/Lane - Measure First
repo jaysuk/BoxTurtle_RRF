@@ -1,14 +1,15 @@
 ; ==========================================================================================
-; AFC Lane Length Measurement Macro
-; Purpose: Calibrates filament length from load position to hub switch.
+; AFC Lane Length Measurement (Sensor-Based)
+; 1. Homes Reverse to the Load Switch (Start).
+; 2. Measures Forward to the Hub Switch (End).
 ; ==========================================================================================
 
 ; --- Configuration & Variables ---
 var lane_number = 0
 var total_axis = 0
-var safety_dist = 300           ; Maximum distance (mm) to search for the hub switch
-var msg_time = 3                ; Duration (seconds) for status messages to appear
-var axis_name = "f"             ; The temporary axis letter used (Reference only, RRF requires literal 'f' in G-code)
+var safety_dist = 300          ; Max distance to search (must be longer than longest tube)
+var msg_time = 3                ; Message duration
+var axis_name = "f"             ; Reference only
 
 ; --- Determine Lane Number ---
 if exists(param.A)
@@ -18,60 +19,96 @@ else
     set var.lane_number = input
 
 ; --- Pre-Flight Check ---
-; Ensure the system thinks the lane is loaded before we try to measure it.
 if !global.AFC_lane_loaded[var.lane_number]
-    M291 P{"Error: Lane " ^ var.lane_number ^ " is not marked as Loaded. Measurement aborted."} R"Calibration Failed" S2
+    M291 P{"Error: Lane " ^ var.lane_number ^ " is not marked as Loaded. Aborting."} R"Calibration Failed" S2
     abort
 
 ; ==========================================================================================
-; Measurement Routine
+; Setup
 ; ==========================================================================================
-
-; 1. Notify User
 M291 P{"Calibrating Lane " ^ var.lane_number ^ "..."} R"System Busy" S0 T{var.msg_time}
 
-; 2. Setup Motor as Temporary Axis
+; Setup Motor
 M98 P"0:/sys/AFC/Motors/Axis_setup.g" A{var.lane_number}
 set var.total_axis = #move.axes
-M584 P{var.total_axis}          ; Unhide the new axis so we can move it
+M584 P{var.total_axis}
 
-; 3. Retract to 'Known' Start Position (Position 0)
-M291 P"Retracting to Load Position..." R"Step 1/2" S0 T{var.msg_time}
+; ==========================================================================================
+; Step 1: Find Start Position (Home to Load Switch)
+; ==========================================================================================
+M291 P"Homing to Load Switch..." R"Step 1/2" S0 T{var.msg_time}
 
-G92 'f{global.AFC_lane_first_length[var.lane_number]}      ; Sync hardware to last known software position
-G1 'f0 F{global.AFC_load_retract_speed[1]*60}              ; Move to 0 (The theoretical load point)
-M400                                                       ; Wait for move to finish
-
-; 4. Measure Distance to Hub Switch
-M291 P"Searching for Hub Switch..." R"Step 2/2" S0 T{var.msg_time}
-
-M574 'f2 S1 P{global.AFC_hub_switch}                       ; Configure Hub Switch as Max Endstop (High End)
-G1 H4 'f{var.safety_dist} F{global.AFC_load_retract_speed[0]*60} ; H4: Move until switch triggers, update machine position
-
-; 5. Back off slightly (Safety Retract)
-G91                                                        ; Relative positioning
-G1 'f{-global.AFC_hub_retract_distance} F{global.AFC_load_retract_speed[1]*60} 
-G90                                                        ; Absolute positioning
+; 1. Enable DC Motor (Reverse) - Based on your snippet
+M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{var.lane_number}
 M400
 
-; ==========================================================================================
-; Data Persistence
-; ==========================================================================================
+; 2. Configure Load Switch as Low Endstop (Min)
+; Using the syntax from your snippet: P{"!"^...} checks for the switch triggering.
+M574 'f1 S1 P{"!"^global.AFC_load_switch[var.lane_number]}
 
-; Capture the new measured value from the object model
+; 3. Set a temporary position so the printer thinks it has room to rewind
+; We add 200mm to the known length just in case the software count was off.
+if global.AFC_lane_first_length[var.lane_number] > 0
+    G92 'f{global.AFC_lane_first_length[var.lane_number] + 200} 
+else
+    G92 'f{var.safety_dist}
+
+; 4. Home Backwards (The "Unload" move)
+; This pulls the filament back until the Load Switch triggers.
+G1 H4 'f0 F{global.AFC_load_retract_speed[1]*60}
+M400
+
+; 5. Set True Zero
+; We are now exactly at the Load Switch. Set this as 0.
+G92 'f0
+
+; Turn off DC Motor temporarily while we switch direction
+M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}
+
+; ==========================================================================================
+; Step 2: Measure to Hub Switch
+; ==========================================================================================
+M291 P"Measuring to Hub Switch..." R"Step 2/2" S0 T{var.msg_time}
+
+; 1. Configure Hub Switch as High Endstop (Max)
+; We also disable the Low endstop (P"nil") so it doesn't conflict.
+M574 'f1 P"nil"
+M574 'f2 S1 P{global.AFC_hub_switch}
+
+; 3. Measure Forward
+; Moves forward until Hub Switch triggers. H4 updates the machine position.
+G1 H4 'f{var.safety_dist} F{global.AFC_load_retract_speed[0]*60}
+M400
+
+G91                                                                                                                   ; This sets the system into relative mode.
+G1 'f{-global.AFC_hub_retract_distance} F{global.AFC_load_retract_speed[1]*60}                                        ; This retracts the filament by a set amount so it's no longer triggering the hub switch.
+G90                                                                                                                   ; This sets the system back into absolute mode.
+M400                                                                                                                  ; This waits for all movement to stop.
+
+; 4. Capture Measurement
 set global.AFC_lane_first_length[{var.lane_number}] = move.axes[{global.om_axis_number}].machinePosition
 
-; Write to file
+; ==========================================================================================
+; Step 3: Retract to Start & Save
+; ==========================================================================================
+M291 P"Saving and Retracting..." R"Finishing" S0 T{var.msg_time}
+
+; Save to File
 echo >"0:/sys/AFC/AFC-info/lane_first_length.g" " ; lane first lengths"
 echo >>"0:/sys/AFC/AFC-info/lane_first_length.g" "set global.AFC_lane_first_length = " ^ global.AFC_lane_first_length
 
-; ==========================================================================================
-; Cleanup & User Feedback
-; ==========================================================================================
+; Switch DC Motor to Reverse
+M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{var.lane_number}
+M400
 
-; Free the switch and hide the axis
-M574 'f1 S1 P"nil"
+; Retract back to 0 (The Load Switch)
+G1 'f0 F{global.AFC_load_retract_speed[1]*60}
+M400
+
+; Turn everything off
+M98 P"0:/sys/AFC/Motors/dc_motors.g" A"O" B{var.lane_number}
+M574 'f2 S1 P"nil"
 M584 P{var.total_axis-1}
 
-; Final Success Message (S1 = Blocking "OK" dialog)
+; Final Report
 M291 P{"Calibration Complete. Lane " ^ var.lane_number ^ " Length: " ^ global.AFC_lane_first_length[{var.lane_number}] ^ "mm"} R"Success" S1

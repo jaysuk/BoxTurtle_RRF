@@ -1,2 +1,27 @@
-while iterations < global.AFC_total_lanes                                                  ; Loop through each lane using the built-in iteration counter
-    M118 S{"Lane "^iterations^" length is "^global.AFC_lane_first_length[iterations]^"mm"} ; Output the stored 'first length' measurement for the current lane to the console
+; ==========================================================================================
+; AFC Lane Length Report (List View)
+; Uses a selection menu to display the data as a clean vertical list.
+; ==========================================================================================
+
+; 1. Create a temporary array to hold the text strings
+; We set the size of the vector to match the total number of lanes.
+var report_list = vector(global.AFC_total_lanes, "")
+
+; 2. Populate the array
+while iterations < global.AFC_total_lanes
+    ; Create the string for this specific lane
+    var lane_info = "Lane " ^ iterations ^ ": " ^ global.AFC_lane_first_length[iterations] ^ "mm"
+    
+    ; Add "(Empty/Uncalibrated)" text if the length is 0 for clarity
+    if global.AFC_lane_first_length[iterations] == 0
+         set var.lane_info = var.lane_info ^ " (Empty)"
+         
+    ; Store it in the list
+    set var.report_list[iterations] = var.lane_info
+
+; 3. Display the List
+; P = Title
+; K = The array of strings we just created
+; S4 = Selection Mode (creates the list buttons)
+; F0 = No "Cancel" button, forcing the user to click a lane (button) to close the window.
+M291 P"Current Lane Lengths (Click any to close)" K{var.report_list} S4 F0

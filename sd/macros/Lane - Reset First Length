@@ -1,17 +1,48 @@
-; param.A - This has been added to allow BtnCMD to call this macro for a specific lane
+; ==========================================================================================
+; AFC Lane Length Reset
+; Resets calibration data. All file paths and constants are defined at the top.
+; ==========================================================================================
 
-var lane_number = 0                                                                                                   ; This just initialises the variable
+; --- Configuration / Constants ---
+var persistence_file = "0:/sys/AFC/AFC-info/lane_first_length.g"  ; Location to save data
+var lane_count = global.AFC_total_lanes                           ; Total number of lanes
+var lane_list = global.M291_lane_list_all                         ; List for the GUI menu
+var lane_number = 0
+var is_all_lanes = false
+var msg_time = 3
 
-if exists(param.A)                                                                                                    ; Check to see if param.A exists from the BtnCMD call
-    set var.lane_number = param.A                                                                                     ; Sets the variable to the lane number
+; --- 1. Determine Input ---
+if exists(param.A)
+    set var.lane_number = param.A
 else 
-    M291 P"Select the lane to be reset" K{global.M291_lane_list_all} S4 J1                                            ; Popup box with options for the lane to reset
-    set var.lane_number = input                                                                                       ; Sets the variable to the chosen lane (4 represents 'All')
+    M291 P"Select the lane to be reset" K{var.lane_list} S4 J1
+    set var.lane_number = input
 
-if var.lane_number == 4                                                                                               ; Checks if the user selected 'All'
-    while iterations < global.AFC_total_lanes                                                                         ; Iterates through every available lane
-        set global.AFC_lane_first_length[{iterations}] = 0                                                            ; Resets the length to 0 for the current iteration
+; --- 2. Analyze Selection ---
+; Check against the variable 'lane_count' instead of a hardcoded number like '4'
+if var.lane_number == var.lane_count
+    set var.is_all_lanes = true
+
+; --- 3. Safety Confirmation ---
+if var.is_all_lanes
+    M291 P"WARNING: This will wipe calibration data for ALL lanes. Continue?" R"Confirm Factory Reset" S3
 else
-    set global.AFC_lane_first_length[{var.lane_number}] = 0                                                           ; Resets the length to 0 for the specific selected lane
-echo >"0:/sys/AFC/AFC-info/lane_first_length.g" " ; lane first lengths"                                               ; Overwrites/Initializes the persistence file
-echo >>"0:/sys/AFC/AFC-info/lane_first_length.g" "set global.AFC_lane_first_length = " ^ global.AFC_lane_first_length ; Saves the updated global array to the file
+    M291 P{"Are you sure you want to reset Lane " ^ var.lane_number ^ "?"} R"Confirm Reset" S3
+
+; --- 4. Execution ---
+if var.is_all_lanes
+    while iterations < var.lane_count
+        set global.AFC_lane_first_length[iterations] = 0
+else
+    set global.AFC_lane_first_length[{var.lane_number}] = 0
+
+; --- 5. Persistence (Save) ---
+; Uses the variable 'persistence_file' so the path is not hardcoded in the logic
+echo >{var.persistence_file} " ; lane first lengths"
+echo >>{var.persistence_file} "set global.AFC_lane_first_length = " ^ global.AFC_lane_first_length
+
+; --- 6. Success Feedback ---
+if var.is_all_lanes
+    M291 P"All lanes have been reset to 0." R"Success" S1 T{var.msg_time}
+else
+    M291 P{"Lane " ^ var.lane_number ^ " has been reset to 0."} R"Success" S1 T3
