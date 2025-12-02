@@ -1,52 +1,77 @@
-; === AFC Lane Length Measurement Macro (RepRapFirmware G-Code) ===
-; Purpose: Re-measures the filament length from the initial load position to the hub switch
-;          and updates the persistent configuration.
+; ==========================================================================================
+; AFC Lane Length Measurement Macro
+; Purpose: Calibrates filament length from load position to hub switch.
+; ==========================================================================================
 
-; --- Macro Parameters ---
-; param.A - This has been added to allow BtnCMD to call this macro for a specific lane.
-
-; --- Variable Initialization ---
-var lane_number = 0                                                                                                       ; This just initialises the variable for the lane index.
-var total_axis = 0                                                                                                        ; This just initialises the variable for the axis count.
-var internal_max_load_length = 300                                                                                        ; Max distance to search for the hub switch (safety limit).
+; --- Configuration & Variables ---
+var lane_number = 0
+var total_axis = 0
+var safety_dist = 300           ; Maximum distance (mm) to search for the hub switch
+var msg_time = 3                ; Duration (seconds) for status messages to appear
+var axis_name = "f"             ; The temporary axis letter used (Reference only, RRF requires literal 'f' in G-code)
 
 ; --- Determine Lane Number ---
-if exists(param.A)                                                                                                        ; Check to see if param.A exists from the BtnCMD call.
-    set var.lane_number = param.A                                                                                         ; Sets the variable to the provided lane number.
+if exists(param.A)
+    set var.lane_number = param.A
 else 
-    M291 P"Select the lane to be measured" K{global.M291_lane_list} S4 J1                                                 ; Popup box with options for the lane to measure.
-    set var.lane_number=input                                                                                             ; Sets the variable to the chosen lane.
+    M291 P"Select the lane to be measured" K{global.M291_lane_list} S4 J1
+    set var.lane_number = input
 
-; --- Measurement Routine ---
-if global.AFC_lane_loaded[var.lane_number]                                                                                ; Proceed only if the system believes the lane is currently loaded.
-    M98 P"0:/sys/AFC/Motors/Axis_setup.g" A{var.lane_number}                                                              ; This sets up the motor for the selected lane as axis 'f'.
-    set var.total_axis = #move.axes                                                                                       ; Sets the variable to the total number of axes (including 'f').
-    M584 P{var.total_axis}                                                                                                ; This unhides all the axes so we can move the lane motor.
- 
-                                                                                                                          ; --- Reset Position ---
-    G92 'f{global.AFC_lane_first_length[var.lane_number]}                                                                 ; This sets the current axis position to the *previously known* first length.
-    G1 'f0 F{global.AFC_load_retract_speed[1]*60}                                                                         ; This retracts the filament back to position 0 (theoretically where the load switch is).
-
-                                                                                                                          ; --- Measure New Length ---
-    M574 'f2 S1 P{global.AFC_hub_switch}                                                                                  ; This sets the hub switch up as a max endstop for axis 'f'.
-    G1 H4 'f{var.internal_max_load_length} F{global.AFC_load_retract_speed[0]*60}                                         ; This performs a homing move to the hub switch and measures the actual distance moved.
- 
-                                                                                                                          ; --- Retract to Safe Position ---
-    G91                                                                                                                   ; This sets the system into relative mode.
-    G1 'f{-global.AFC_hub_retract_distance} F{global.AFC_load_retract_speed[1]*60}                                        ; This retracts the filament by a set amount so it's no longer triggering the hub switch.
-    G90                                                                                                                   ; This sets the system back into absolute mode.
-    M400                                                                                                                  ; This waits for all movement to stop.
-
-                                                                                                                          ; --- Save New Measurement ---
-    set global.AFC_lane_first_length[{var.lane_number}] = move.axes[{global.om_axis_number}].machinePosition              ; This sets the first length for the lane to the *current* absolute position of the 'f' axis.
-    echo >"0:/sys/AFC/AFC-info/lane_first_length.g" " ; lane first lengths"                                               ; This creates/overwrites the first length persistence file.
-    echo >>"0:/sys/AFC/AFC-info/lane_first_length.g" "set global.AFC_lane_first_length = " ^ global.AFC_lane_first_length ; This appends the updated global array to the file.
- 
-    M118 S{"Lane "^{var.lane_number}^" has a measured length of "^global.AFC_lane_first_length[{var.lane_number}]^"mm"}   ; Outputs the new measurement to the console.
-
-                                                                                                                          ; --- Cleanup ---
-    M574 'f1 S1 P"nil"                                                                                                    ; This frees up the hub switch from being an endstop.
-    M584 P{var.total_axis-1}                                                                                              ; This hides the axis used for driving the lane.
-else
-    M118 S{"Lane "^var.lane_number^" is not loaded so nothing to measure"}                                                ; Report error if lane is empty.
+; --- Pre-Flight Check ---
+; Ensure the system thinks the lane is loaded before we try to measure it.
+if !global.AFC_lane_loaded[var.lane_number]
+    M291 P{"Error: Lane " ^ var.lane_number ^ " is not marked as Loaded. Measurement aborted."} R"Calibration Failed" S2
     abort
+
+; ==========================================================================================
+; Measurement Routine
+; ==========================================================================================
+
+; 1. Notify User
+M291 P{"Calibrating Lane " ^ var.lane_number ^ "..."} R"System Busy" S0 T{var.msg_time}
+
+; 2. Setup Motor as Temporary Axis
+M98 P"0:/sys/AFC/Motors/Axis_setup.g" A{var.lane_number}
+set var.total_axis = #move.axes
+M584 P{var.total_axis}          ; Unhide the new axis so we can move it
+
+; 3. Retract to 'Known' Start Position (Position 0)
+M291 P"Retracting to Load Position..." R"Step 1/2" S0 T{var.msg_time}
+
+G92 'f{global.AFC_lane_first_length[var.lane_number]}      ; Sync hardware to last known software position
+G1 'f0 F{global.AFC_load_retract_speed[1]*60}              ; Move to 0 (The theoretical load point)
+M400                                                       ; Wait for move to finish
+
+; 4. Measure Distance to Hub Switch
+M291 P"Searching for Hub Switch..." R"Step 2/2" S0 T{var.msg_time}
+
+M574 'f2 S1 P{global.AFC_hub_switch}                       ; Configure Hub Switch as Max Endstop (High End)
+G1 H4 'f{var.safety_dist} F{global.AFC_load_retract_speed[0]*60} ; H4: Move until switch triggers, update machine position
+
+; 5. Back off slightly (Safety Retract)
+G91                                                        ; Relative positioning
+G1 'f{-global.AFC_hub_retract_distance} F{global.AFC_load_retract_speed[1]*60} 
+G90                                                        ; Absolute positioning
+M400
+
+; ==========================================================================================
+; Data Persistence
+; ==========================================================================================
+
+; Capture the new measured value from the object model
+set global.AFC_lane_first_length[{var.lane_number}] = move.axes[{global.om_axis_number}].machinePosition
+
+; Write to file
+echo >"0:/sys/AFC/AFC-info/lane_first_length.g" " ; lane first lengths"
+echo >>"0:/sys/AFC/AFC-info/lane_first_length.g" "set global.AFC_lane_first_length = " ^ global.AFC_lane_first_length
+
+; ==========================================================================================
+; Cleanup & User Feedback
+; ==========================================================================================
+
+; Free the switch and hide the axis
+M574 'f1 S1 P"nil"
+M584 P{var.total_axis-1}
+
+; Final Success Message (S1 = Blocking "OK" dialog)
+M291 P{"Calibration Complete. Lane " ^ var.lane_number ^ " Length: " ^ global.AFC_lane_first_length[{var.lane_number}] ^ "mm"} R"Success" S1
