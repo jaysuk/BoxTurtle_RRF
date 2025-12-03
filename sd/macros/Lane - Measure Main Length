@@ -55,7 +55,7 @@ set var.total_axis = #move.axes
 if (global.AFC_features[6] == 0 || global.AFC_features[6] == 1)
     M291 P"Searching for TN Switch..." R"Step 1/3" S0 T{var.msg_time}
     M574 'f2 S1 P{global.TN_switches[0]}
-    
+    M400
     G92 'f{var.first_length}
     M400
     
@@ -73,7 +73,7 @@ if (global.AFC_features[6] == 0 || global.AFC_features[6] == 1)
 elif global.AFC_features[6] == 2
     M291 P"Searching for Extruder Switch..." R"Step 1/3" S0 T{var.msg_time}
     M574 'f2 P{global.extruder_switches[0]} S1
-    
+    M400
     G92 'f{var.first_length}
     M400
     
