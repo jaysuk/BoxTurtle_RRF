@@ -56,3 +56,6 @@ M400                                                                            
 
 ; --- Cleanup ---
 M574 'f1 P"nil" S1                                                                                            ; Disable the endstop for the temporary
+M400
+M84 'f
+M584 P{var.total_axis-1}
