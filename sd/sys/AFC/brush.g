@@ -31,7 +31,8 @@ var currentz = move.axes[2].machinePosition                          ; Capture t
 ; [10]: Deployed angle
 ; [11]: Retracted angle
 ; [12]: Servo number (for M950)
-; [13]: True - Z needs to be above a certain height for brush deployment. False - No minimum z height required
+; [13]: Brush clean acceleration
+; [14]: True - Z needs to be above a certain height for brush deployment. False - No minimum z height required
 
 ; move to the centre of the brush
 
@@ -40,7 +41,7 @@ M98 P"0:/sys/AFC/debug.g" A"AFC_Brush: Move to Brush."               ; Log move 
 
 ; Check Z-Height Safety and Move Z
 ; Check if Z minimum height is required (global.AFC_brush[13]) AND if the target Z is higher than the current Z.
-if global.AFC_brush[13] && (global.AFC_brush[2] > move.axes[2].machinePosition)
+if global.AFC_brush[14] && (global.AFC_brush[2] > move.axes[2].machinePosition)
     G1 Z{global.AFC_brush[2]} F{var.z_travel_speed}                  ; Move Z axis up to the required Z position before horizontal travel.
 
 ; Deploy the brush mechanism

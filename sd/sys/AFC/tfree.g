@@ -25,6 +25,10 @@ var DC_motor=0 ; Flag for DC motor assistance
 var retract = 0 ; Filament retract distance variable
 var lane_number = 0 ; Index of the lane being freed
 
+; --- If the print head is not hot, make it hot ---
+if (state.nextTool == -1 && tools[{var.lane_number}].active[0] <= 175)
+    M568 P{var.lane_number} S220 R220
+
 ; --- Determine Lane Number ---
 if exists(param.A) ; Check if lane number parameter was passed
     set var.lane_number = param.A ; Assign parameter to local variable
@@ -38,6 +42,10 @@ if global.AFC_features[10] == 1 ; Check if Spoolman feature is enabled
 ; --- Homing Check ---
 if !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed ; Verify all axes are homed
     G28 ; Perform homing if necessary
+
+; --- Feature Execution (Cut/Park) ---
+M116        ; wait for print head to reach temperature
+M400        ; wait for other commands to finish executing
 
 ; --- Feature Execution (Cut/Park) ---
 if !exists(param.C) ; If not ignoring movement commands
