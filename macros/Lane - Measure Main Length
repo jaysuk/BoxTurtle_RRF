@@ -1,0 +1,135 @@
+; ==========================================================================================
+; AFC System Length Calibration
+; Measures distance from Hub to Toolhead Sensor and updates ALL lanes.
+; ==========================================================================================
+
+; --- Configuration ---
+var msg_time = 3            ; Seconds to show status messages
+var axis_name = "f"         ; Temporary axis used (Reference only)
+
+; --- Variables ---
+var lane_number = 0
+var tool_number = 0
+var unit_number = 0
+var first_length = 0
+var additional_length = 0
+var total_length = 0
+var total_axis = 0
+
+; ==========================================================================================
+; 1. Safety Checks & Selection
+; ==========================================================================================
+
+; User Selection
+if #global.M291_data[0] != 1
+    M291 P"Select the Unit" K{global.M291_data[0]} S4 J1
+    set var.unit_number = input
+else
+    set var.unit_number = 0
+
+M291 P"Select the lane to use to measure the main length" K{global.M291_data[1][var.unit_number]} S4 J1
+set var.lane_number = input
+set var.tool_number = global.AFC_lane_to_tool[var.unit_number][var.lane_number]
+
+; Check Hub Switch (Ensure path isn't physically blocked before starting)
+M950 J{global.AFC_hub_input_number[var.unit_number]} C{global.AFC_hub_switch[var.unit_number]}
+if sensors.gpIn[global.AFC_hub_input_number[var.unit_number]].value != 0
+    M291 P{"Error: Filament detected in Unit "^var.unit_number^" Hub Switch! Clear path before measuring."} R"Aborted" S2
+    M950 J{global.AFC_hub_input_number[var.unit_number]} C"nil"
+    abort
+
+; Check if Selected Lane is actually loaded (Prevents grinding/air printing)
+if !global.AFC_lanes[var.unit_number][var.lane_number][0]
+    M291 P{"Error: Unit "^var.unit_number^": Lane " ^ var.lane_number ^ " is not marked as Loaded. Cannot Measure."} R"Aborted" S2
+    M950 J{global.AFC_hub_input_number[var.unit_number]} C"nil"
+    abort
+
+; Retrieve known start length
+set var.first_length = global.AFC_lanes[var.unit_number][var.lane_number][1]
+
+; ==========================================================================================
+; 2. Motor Setup
+; ==========================================================================================
+M291 P{"Preparing Unit "^var.unit_number^": Lane " ^ var.lane_number ^ "..."} R"System Busy" S0 T{var.msg_time}
+
+M584 P{#move.axes} ; Reset axes visibility
+M98 P"0:/sys/AFC/Macros/axis_setup.g" A{var.tool_number}
+set var.total_axis = #move.axes
+
+; ==========================================================================================
+; 3. Measurement Routine
+; ==========================================================================================
+
+; --- Case A: TN Switch (Features 0 or 1) ---
+if (global.Machine_features[6] == 0 || global.Machine_features[6] == 1)
+    M291 P"Searching for TN Switch..." R"Step 1/3" S0 T{var.msg_time}
+    M574 'f2 S1 P{global.AFC_TN_switches[var.unit_number][0]}
+    M400
+    G92 'f{var.first_length}
+    M400
+    
+    ; Probe for switch
+    G1 H4 'f{global.AFC_max_min_axes[var.unit_number][1]} F{global.AFC_load_retract_speed[var.unit_number][0]*60}
+    
+    ; Back off to park position
+    G91
+    G1 H2 'f{-global.AFC_tn_retract_distance[var.unit_number]} F{global.AFC_load_retract_speed[var.unit_number][1]*60}
+    G90
+    M400
+    M574 'f2 S1 P"nil"
+
+; --- Case B: Extruder Switch (Feature 2) ---
+elif global.Machine_features[6] == 2
+    M291 P"Searching for Extruder Switch..." R"Step 1/3" S0 T{var.msg_time}
+    M574 'f2 P{global.Machine_extruder_switches[0]} S1
+    M400
+    G92 'f{var.first_length}
+    M400
+    
+    ; Probe for switch
+    G1 H4 'f{global.AFC_max_min_axes[var.unit_number][1]} F{global.AFC_load_retract_speed[var.unit_number][0]*60}
+    M400
+    M574 'f2 S1 P"nil"
+
+; ==========================================================================================
+; 4. Calculation & persistence
+; ==========================================================================================
+M291 P"Calculating and Saving Data..." R"Step 2/3" S0 T{var.msg_time}
+
+; Calculate the "Hub to Sensor" distance (This is constant for all lanes)
+set var.total_length = move.axes[{global.Machine_om_axis_number}].machinePosition
+set var.additional_length = var.total_length - global.AFC_lanes[var.unit_number][var.lane_number][1]
+
+; Update ALL lanes based on this new measurement
+; (Uses a loop so it works for 4, 6, or 12 lanes automatically)
+while iterations < global.AFC_unit_total_lanes[var.unit_number]
+    set global.AFC_lanes[var.unit_number][iterations][2] = global.AFC_lanes[var.unit_number][iterations][1] + var.additional_length
+
+; Save to File
+M98 P"0:/sys/AFC/Macros/save_status.g"
+
+; ==========================================================================================
+; 5. Retraction & Cleanup
+; ==========================================================================================
+M291 P"Retracting Filament..." R"Step 3/3" S0 T{var.msg_time}
+
+; Activate DC Motor (Assist)
+M98 P"0:/sys/AFC/Macros/dc_motors.g" A"R" B{var.tool_number}
+M400
+
+; Retract Step
+G1 'f{global.AFC_lanes[var.unit_number][var.lane_number][1]} F{global.AFC_load_retract_speed[var.unit_number][1]*60}
+M400
+
+; Stop DC Motor
+M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}
+M400
+
+; Cleanup Pins & Axes
+M950 J{global.AFC_hub_input_number[var.unit_number]} C"nil"
+M584 P{var.total_axis-1}
+
+; Final Report
+M291 P{"Calibration Complete. Added Length (Hub->Sensor): " ^ var.additional_length ^ "mm"} R"Success" S1
+if #global.M291_data[0] != 1
+    M291 P"Remember to do this for your other AFC units" R"Reminder" S1

@@ -1,11 +1,52 @@
 ; param.A - This has been added to allow BtnCMD to call this macro for a specific lane
 
-var lane_number = 0                                                                                        ; This just initialises the variable
+; AFC Feature Numbers
+; 0 = brush
+; 1 = cut
+; 2 = kick
+; 3 = park
+; 4 = poop
+; 5 = purge
+; 6 = load
+; 7 = startup check
+; 8 = use the dc motor on unload
+; 9 = unload method
+; 10 = spoolman support
 
-if exists(param.A)                                                                                         ; Check to see if param.A exists from the BtnCMD call
-    set var.lane_number = param.A                                                                          ; Sets the variable to the lane number
+var lane_number = 0
+var tool_number = 0
+var unit_number = 0
+var is_all_lanes = false
+
+if exists(param.A)
+    set var.tool_number = param.A                                              ; Assign parameter to local variable for cleaner syntax
+    set var.unit_number = global.Tool_to_AFC[var.tool_number][0]
+    set var.lane_number = global.Tool_to_AFC[var.tool_number][1]
 else 
-    M291 P"Select the lane use to measure the overall length" K{"Lane 0","Lane 1","Lane 2","Lane 3"} S4 J1 ; Popup box with options for the lane to unload
-    set var.lane_number=input                                                                              ; Sets the variable to the chosen lane
+    if #global.M291_data[0] != 1
+        M291 P"Select the Unit" K{global.M291_data[0]} S4 J1
+        set var.unit_number = input
+    else
+        set var.unit_number = 0
+    
+    M291 P"Select the lane to unload" K{global.M291_data[2][var.unit_number]} S4 J1
+    if input == global.AFC_unit_total_lanes[var.unit_number]
+        set var.is_all_lanes = true
+    else
+        set var.lane_number = input
+    if !var.is_all_lanes
+        set var.tool_number = global.AFC_lane_to_tool[var.unit_number][var.lane_number]
 
-M98 P"0:/sys/AFC/unload.g" A{var.lane_number} B1                                                           ; Calls the unload script with the correct lane number and makes sure the DC motor is used
+if var.lane_number != global.AFC_unit_total_lanes[var.unit_number]
+    if global.AFC_features[var.unit_number][0]                                                ; Check if Feature 8 (DC Motor on Unload) is enabled
+        M98 P"0:/sys/AFC/Macros/unload.g" A{var.tool_number} B1                     ; Execute unload macro for selected lane with DC motor enabled (B1)
+    else
+        M98 P"0:/sys/AFC/Macros/unload.g" A{var.tool_number} B0                     ; Execute unload macro for selected lane with DC motor disabled (B0)
+else
+    while iterations < global.AFC_unit_total_lanes[var.unit_number]
+        set var.lane_number = iterations
+        set var.tool_number = global.AFC_lane_to_tool[var.unit_number][var.lane_number]
+        if global.AFC_features[var.unit_number][0]                                            ; Check if Feature 8 (DC Motor on Unload) is enabled
+            M98 P"0:/sys/AFC/Macros/unload.g" A{var.tool_number} B1                      ; Execute unload macro for selected lane with DC motor enabled (B1)
+        else
+            M98 P"0:/sys/AFC/Macros/unload.g" A{var.tool_number} B0                      ; Execute unload macro for selected lane with DC motor disabled (B0)

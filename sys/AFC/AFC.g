@@ -1,72 +1,57 @@
-if !exists(global.AFC_settings_loaded)  ; This checks whether the settings have been loaded before. Helpful for when running config checks
-    M98 P"0:/sys/AFC/AFC_vars.g"
-    global AFC_settings_loaded = true
+; === AFC Main Initialization Script (AFC.g) ===
+; Purpose: Loads configurations, initializes hardware (motors, tools, LEDs), 
+; and restores the saved system state.
 
-if fileexists("0:/sys/AFC/AFC_user_vars.g") ; This checks for the existance of user overrides
-    M98 P"0:/sys/AFC/AFC_user_vars.g"
+var file_address = ""
+var curLane = 0
+var curUnit = 0
+var count = 0
 
-;######## Motors ################
-M569 P{global.AFC_driver_number[0]} S{global.AFC_stepper_direction[0]}  ; This sets up the direction for lane 0
-M569 P{global.AFC_driver_number[1]} S{global.AFC_stepper_direction[1]} ; This sets up the direction for lane 1
-M569 P{global.AFC_driver_number[2]} S{global.AFC_stepper_direction[2]} ; This sets up the direction for lane 2
-M569 P{global.AFC_driver_number[3]} S{global.AFC_stepper_direction[3]} ; This sets up the direction for lane 3
+; --- Configuration Loading ---
+if !exists(global.AFC_settings_loaded)                                                                          ; Checks if the primary AFC settings have been loaded into global variables.
+    M98 P"0:/sys/AFC/Macros/gather_machine_info.g"
+    M98 P"0:/sys/AFC/AFC_units.g"                                                                               ; Load Unit Definitions
+    M98 P"0:/sys/AFC/Machine_vars.g"                                                                            ; Load Machine Settings
+    global AFC_settings_loaded = true                                                                           ; Set a flag to prevent re-execution of the default settings file on subsequent runs.
 
-if !exists(global.max_axes)
-    global max_axes=#move.axes
+; --- User Overrides (Unit Specific) ---
+while iterations < #global.AFC_unit_CAN_ids
+    set var.curUnit = iterations
+    set var.file_address = "0:/sys/AFC/"^var.curUnit^"/AFC_user_vars.g"
+    if fileexists(var.file_address)                                                                             ; Checks for the existence of an optional user override file.
+        M98 P{var.file_address} A{var.curUnit}                                                                   ; Load per-unit user overrides
 
-;######## Lane Triggers #########
-M950 J{global.AFC_trigger_input_numbers[0]} C{global.AFC_prep_switch[0]}           ; Lane 0 Prep
-M950 J{global.AFC_trigger_input_numbers[1]} C{global.AFC_prep_switch[1]}           ; Lane 1 Prep
-M950 J{global.AFC_trigger_input_numbers[2]} C{global.AFC_prep_switch[2]}           ; Lane 2 Prep
-M950 J{global.AFC_trigger_input_numbers[3]} C{global.AFC_prep_switch[3]}           ; Lane 3 Prep
-M581 P0 R2 T{global.AFC_trigger_numbers[0]} S1 ; Lane 0 trigger2.g  ; This sets up the lane 0 trigger
-M581 P1 R2 T{global.AFC_trigger_numbers[1]} S1 ; Lane 1 trigger3.g ; This sets up the lane 0 trigger
-M581 P2 R2 T{global.AFC_trigger_numbers[2]} S1 ; Lane 2 trigger4.g ; This sets up the lane 0 trigger
-M581 P3 R2 T{global.AFC_trigger_numbers[3]} S1 ; Lane 3 trigger5.g ; This sets up the lane 0 trigger
+; --- User Overrides (Machine Specific) ---
+if fileexists("0:/sys/AFC/Machine/Machine_user_vars.g")                                                         ; Checks for the existence of an optional user override file.
+    M98 P"0:/sys/AFC/Machine/Machine_user_vars.g"                                                               ; Load machine user overrides
 
-;######## Extruders #################
-M584 E{global.main_extruder[0],global.AFC_driver_number[0]}     ; This maps the current extruder driver and the driver for the correct channel as extruders
-M350 E{global.main_extruder[1],global.AFC_microsteps[0]}    ; This sets the microsteps for both steppers
-M92 E{global.main_extruder[2],global.AFC_steps_per_mm[0]} ; This sets the steps per mm for both steppers
-M906 E{global.main_extruder[6],global.AFC_stepper_current[0]}  ; This sets the current for both steppers
-M566 E{global.main_extruder[3],global.AFC_stepper_jerk[0]*60}                       ; This sets the maximum instantaneous speed changes (mm/min) for both steppers
-M203 E{global.main_extruder[4],global.AFC_stepper_max_speed[0]*60}             ; This sets the maximum speeds (mm/min) for both steppers
-M201 E{global.main_extruder[5],global.AFC_stepper_acc[0]}                         ; This sets the accelerations for both steppers
-M83
+; --- Motor Driver Setup ---
+; Initialize the driver direction (M569) for every motor in every unit.
+while iterations < #global.AFC_unit_CAN_ids
+    set var.curUnit = iterations
+    M98 P"0:/sys/AFC/Macros/AFC_setup.g" A{var.curUnit}
 
-;######## Tools #################
-M563 P0 D0:1 H1 F0                               ; define tool 0 used by lane 0
-G10 P0 X0 Y0 Z0                                ; set tool 0 axis offsets
-G10 P0 R0 S0                                   ; set initial tool 0 active and standby temperatures to 0C
+M98 P"0:/sys/AFC/Macros/calculate_tools.g"
 
-M563 P1 D0:1 H1 F0                               ; define tool 1 used by lane 1
-G10 P1 X0 Y0 Z0                                ; set tool 0 axis offsets
-G10 P1 R0 S0                                   ; set initial tool 0 active and standby temperatures to 0C
+; --- State Restoration (Persistence) ---
+; Loads the saved status of lanes, lengths, and colors from the Status folder.
+if fileexists("0:/sys/AFC/Status/status.g")
+    M98 P"0:/sys/AFC/Status/status.g"
 
-M563 P2 D0:1 H1 F0                               ; define tool 2 used by lane 2
-G10 P2 D0:1 Y0 Z0                                ; set tool 0 axis offsets
-G10 P2 R0 S0                                   ; set initial tool 0 active and standby temperatures to 0C
+; --- LED Configuration ---
+; Configures the Neopixel strips for each unit.
+while iterations < #global.AFC_unit_CAN_ids
+    set var.curUnit = iterations
+    while iterations < #global.AFC_neopixel[var.curUnit][0]
+        set var.count = iterations
+        M950 E{global.AFC_neopixel[var.curUnit][1][var.count]} C{global.AFC_neopixel[var.curUnit][0][var.count]} T{global.AFC_neopixel[var.curUnit][2][var.count]} U{global.AFC_neopixel[var.curUnit][3][var.count]}
+; M950 sets up the Neopixel strip: E is the logical index, C is the physical pin, T is the type/number of LEDs, U is the colour encoding format.
 
-M563 P3 D0:1 H1 F0                               ; define tool 3 used by lane 3
-G10 P3 X0 Y0 Z0                                ; set tool 0 axis offsets
-G10 P3 R0 S0                                   ; set initial tool 0 active and standby temperatures to 0C
+M98 P"0:/sys/AFC/Macros/leds.g"
 
-;######## Lane 0 ################
-if fileexists("0:/sys/AFC/AFC-info/lane_first_length.g")
-    M98 P"0:/sys/AFC/AFC-info/lane_first_length.g"
-if fileexists("0:/sys/AFC/AFC-info/lane_total_length.g")
-    M98 P"0:/sys/AFC/AFC-info/lane_total_length.g"
-if fileexists("0:/sys/AFC/AFC-info/lane_status.g")
-    M98 P"0:/sys/AFC/AFC-info/lane_status.g"
-if fileexists("0:/sys/AFC/AFC-info/lane_filament.g")
-    M98 P"0:/sys/AFC/AFC-info/lane_filament.g"
-set global.AFC_lane_filament_type1 = global.AFC_lane_filament_type
-    
-;######## LEDs ##################
-M950 E{global.AFC_neopixel_settings[0]} C{global.AFC_neopixel_pin} T{global.AFC_neopixel_settings[1]} U{global.AFC_neopixel_settings[2]}
-if fileexists("0:/sys/AFC/AFC-info/LEDs.g")
-    M98 P"0:/sys/AFC/AFC-info/LEDs.g"
-M98 P"0:/sys/AFC/LEDs.g"
-
-if global.AFC_features[7]
-    M98 P"0:/sys/AFC/AFC_startup_check.g"
+while iterations < #global.AFC_unit_CAN_ids
+    set var.curUnit = iterations
+    set var.curLane = 0
+    while var.curLane <  global.AFC_unit_total_lanes[var.curUnit]
+        set global.AFC_lanes[var.curUnit][var.curLane][4][1] = global.AFC_lanes[var.curUnit][var.curLane][4][0] ; Assigns the loaded filament type to a new variable (potentially for Lane 1).
+        set var.curLane = var.curLane + 1

@@ -1,13 +1,54 @@
-; param.A - This has been added to allow BtnCMD to call this macro for a specific lane
+; ==========================================================================================
+; AFC Lane Length Reset
+; Resets calibration data. All file paths and constants are defined at the top.
+; ==========================================================================================
 
-var lane_number = 0                                                                                                   ; This just initialises the variable
+; --- Configuration / Constants ---
+var lane_count = 0                          ; Total number of lanes
+var lane_number = 0
+var tool_number = 0
+var unit_number = 0
+var is_all_lanes = false
+var msg_time = 3
 
-if exists(param.A)                                                                                                    ; Check to see if param.A exists from the BtnCMD call
-    set var.lane_number = param.A                                                                                     ; Sets the variable to the lane number
+; --- 1. Determine Input ---
+if exists(param.A)
+    set var.tool_number = param.A                                              ; Assign parameter to local variable for cleaner syntax
+    set var.unit_number = global.Tool_to_AFC[var.tool_number][0]
+    set var.lane_number = global.Tool_to_AFC[var.tool_number][1]
 else 
-    M291 P"Select the lane to be measured" K{"Lane 0","Lane 1","Lane 2","Lane 3"} S4 J1
-    set var.lane_number = input                                                                                       ; Sets the variable to the chosen lane number
+    if #global.M291_data[0] != 1
+        M291 P"Select the Unit" K{global.M291_data[0]} S4 J1
+        set var.unit_number = input
+    else
+        set var.unit_number = 0
+    
+    M291 P"Select the lane to mark as Empty" K{global.M291_data[2][var.unit_number]} S4 J1
+    if input == global.AFC_unit_total_lanes[var.unit_number]
+        set var.is_all_lanes = true
+    else
+        set var.lane_number = input
+    if !var.is_all_lanes
+        set var.tool_number = global.AFC_lane_to_tool[var.unit_number][var.lane_number]
 
-set global.AFC_lane_first_length[{var.lane_number}] = 0                                                               ; Sets the lane first length to 0
-echo >"0:/sys/AFC/AFC-info/lane_first_length.g" " ; lane first lengths"                                               ; Writes the information to a file
-echo >>"0:/sys/AFC/AFC-info/lane_first_length.g" "set global.AFC_lane_first_length = " ^ global.AFC_lane_first_length ; Writes the information to a file
+; --- 3. Safety Confirmation ---
+if var.is_all_lanes
+    M291 P{"WARNING: This will wipe first lane calibration data for ALL lanes in Unit "^var.unit_number^". Continue?"} R"Confirm First Length Reset" S3
+else
+    M291 P{"Are you sure you want to reset Unit "^var.unit_number^": Lane " ^ var.lane_number ^ "?"} R"Confirm Reset" S3
+
+; --- 4. Execution ---
+if var.is_all_lanes
+    while iterations < global.AFC_unit_total_lanes[var.unit_number]
+        set global.AFC_lanes[var.unit_number][iterations][1] = 0
+else
+    set global.AFC_lanes[var.unit_number][var.lane_number][1] = 0
+
+; --- 5. Persistence (Save) ---
+M98 P"0:/sys/AFC/Macros/save_status.g"
+
+; --- 6. Success Feedback ---
+if var.is_all_lanes
+    M291 P{"All lanes in Unit "^var.unit_number^" have been reset to 0."} R"Success" S1 T{var.msg_time}
+else
+    M291 P{"Unit "^var.unit_number^": Lane " ^ var.lane_number ^ " has been reset to 0."} R"Success" S1 T3

@@ -1,0 +1,77 @@
+; ==========================================================================================
+; AFC TurtleNeck / Buffer Manual Switch Test
+; Purpose: Interactive guide to verify the Advance and Trail switches on the buffer mechanism.
+; ==========================================================================================
+
+var lane_number = 0
+var tool_number = 0
+var unit_number = 0
+var base_adv = 0
+var base_trail = 0
+var adv_idx = 0
+var trail_idx = 0
+
+if #global.M291_data[0] != 1
+    M291 P"Select the Unit" K{global.M291_data[0]} S4 J1
+    set var.unit_number = input
+else
+    set var.unit_number = 0
+
+; --- Configuration / mapping variables ---
+set var.adv_idx = global.AFC_buffer_input_numbers[var.unit_number][0]    ; Input Index for Advance Switch
+set var.trail_idx = global.AFC_buffer_input_numbers[var.unit_number][1]  ; Input Index for Trail Switch
+
+; --- 1. Setup Pins ---
+; Map the pins using the global configuration
+M950 J{var.adv_idx} C{global.AFC_TN_switches[var.unit_number][0]}
+M950 J{var.trail_idx} C{global.AFC_TN_switches[var.unit_number][1]}
+
+; --- 2. Establish Baseline (Middle Position) ---
+M291 P{"Please move the TurtleNeck of Unit "^var.unit_number^" to the MIDDLE position (neither switch engaged)."} R"Setup" S3
+
+; Read the state of the switches in the neutral position
+set var.base_adv = sensors.gpIn[var.adv_idx].value
+set var.base_trail = sensors.gpIn[var.trail_idx].value
+
+; --- 3. Test Retract (Trail Switch) ---
+M291 P{"Please Fully RETRACT the TurtleNeck of Unit "^var.unit_number^" (engage the Trail/Back switch)."} R"Test 1/2" S3
+
+; Check if Trail switch changed from its baseline state
+if sensors.gpIn[var.trail_idx].value == var.base_trail
+    ; Trail Switch did NOT change. Let's check if the user wired them backwards.
+    if sensors.gpIn[var.adv_idx].value != var.base_adv
+        ; The Advance switch changed instead!
+        M291 P{"Error: The ADVANCE switch of Unit "^var.unit_number^" triggered instead of TRAIL. You likely have them wired the wrong way round!"} R"Wiring Error" S2
+    else
+        ; Neither changed
+        M291 P{"Error: The Trail Switch of Unit "^var.unit_number^" did not detect a change! Check wiring or physical contact."} R"Test Failed" S2
+
+    ; Cleanup and exit
+    M950 J{var.adv_idx} C"nil"
+    M950 J{var.trail_idx} C"nil"
+    abort
+else
+    ; PASS: Value changed
+    M291 P{"Success: The Trail Switch of Unit "^var.unit_number^" triggered."} R"Pass" S1 T2
+
+; --- 4. Test Extend (Advance Switch) ---
+M291 P{"Please Fully EXTEND the TurtleNeck of Unit "^var.unit_number^" (engage the Advance/Front switch)."} R"Test 2/2" S3
+
+; Check if Advance switch changed from its baseline state
+if sensors.gpIn[var.adv_idx].value == var.base_adv
+    ; FAIL: Value did not change
+    M291 P{"Error:The Advance Switch of Unit "^var.unit_number^" did not detect a change! Check wiring or physical contact."} R"Test Failed" S2
+    ; Cleanup and exit
+    M950 J{var.adv_idx} C"nil"
+    M950 J{var.trail_idx} C"nil"
+    abort
+else
+    ; PASS: Value changed
+    M291 P{"Success: The Advance Switch of Unit "^var.unit_number^" triggered."} R"Pass" S1 T2
+
+; --- 5. Cleanup ---
+; Free the pins so they can be used by the main system
+M950 J{var.adv_idx} C"nil"
+M950 J{var.trail_idx} C"nil"
+
+M291 P{"TurtleNeck Switch Test of Unit "^var.unit_number^" Complete. Both switches are functional."} R"Success" S1

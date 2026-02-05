@@ -1,32 +1,135 @@
-; param.A - This has been added to allow BtnCMD to call this macro for a specific lane
+; ==========================================================================================
+; AFC Lane Length Measurement (Sensor-Based)
+; 1. Homes Reverse to the Load Switch (Start).
+; 2. Measures Forward to the Hub Switch (End).
+; ==========================================================================================
 
-var lane_number = 0                                                                                                   ; This just initialises the variable
-var total_axis = 0                                                                                                    ; This just initialises the variable
+; --- Configuration & Variables ---
+var lane_number = 0
+var tool_number = 0
+var unit_number = 0
+var total_axis = 0
+var safety_dist = 300          ; Max distance to search (must be longer than longest tube)
+var msg_time = 3                ; Message duration
+var axis_name = "f"             ; Reference only
 
-if exists(param.A)                                                                                                    ; Check to see if param.A exists from the BtnCMD call
-    set var.lane_number = param.A                                                                                     ; Sets the variable to the lane number
+; --- Determine Lane Number ---
+if exists(param.A)
+    set var.tool_number = param.A                                              ; Assign parameter to local variable for cleaner syntax
+    set var.unit_number = global.Tool_to_AFC[var.tool_number][0]
+    set var.lane_number = global.Tool_to_AFC[var.tool_number][1]
 else 
-    M291 P"Select the lane to be measured" K{"Lane 0","Lane 1","Lane 2","Lane 3"} S4 J1                               ; Popup box with options for the lane to unload
-    set var.lane_number=input                                                                                         ; Sets the variable to the chosen lane
+    if #global.M291_data[0] != 1
+        M291 P"Select the Unit" K{global.M291_data[0]} S4 J1
+        set var.unit_number = input
+    else
+        set var.unit_number = 0
+    
+    M291 P"Select the lane to mark as Empty" K{global.M291_data[1][var.unit_number]} S4 J1
+    set var.lane_number = input
+    set var.tool_number = global.AFC_lane_to_tool[var.unit_number][var.lane_number]
 
-if global.AFC_lane_loaded[var.lane_number]
-    M98 P"0:/sys/AFC/Motors/Axis_setup.g" A{var.lane_number}                                                              ; This sets up the motors correctly
-    set var.total_axis = #move.axes                                                                                       ; Sets the variable to the total number of axes
-    M584 P{var.total_axis}                                                                                                ; This unhides all the axes so we can move the lanes
-    G92 's{global.AFC_lane_first_length[var.lane_number]}                                                                 ; This sets the axis length to the current length previously measured
-    G1 's0 F{global.AFC_load_retract_speed[1]*60}                                                                                    ; This retracts the filament to the point where the load switch was triggered
-
-    M574 's2 S1 P{global.AFC_hub_switch}                                                                                  ; This sets the hub switch up as an endstop
-    G1 H4 's300 F{global.AFC_load_retract_speed[0]*60}                                                                                  ; This moves to the hub switch and measures the distance moved
-    G91                                                                                                                   ; This sets the system into relative mode
-    G1 's{-global.AFC_hub_retract_distance} F{global.AFC_load_retract_speed[1]*60}                                                   ; This retracts the filament by a set amount so its no longer in the hub
-    G90                                                                                                                   ; This sets the system into absolute mode
-    M400                                                                                                                  ; This waits for all movement to stop
-    set global.AFC_lane_first_length[{var.lane_number}] = move.axes[{global.om_axis_number}].machinePosition              ; This sets the first length for the lane to the position of the 's axis
-    echo >"0:/sys/AFC/AFC-info/lane_first_length.g" " ; lane first lengths"                                               ; This writes the first length array to a file
-    echo >>"0:/sys/AFC/AFC-info/lane_first_length.g" "set global.AFC_lane_first_length = " ^ global.AFC_lane_first_length ; This writes the first length array to a file
-    M574 's1 S1 P"nil"                                                                                                    ; This frees up the hub switch from being an endstop
-    M584 P{var.total_axis-1}                                                                                              ; This hides the axis used for driving the lane
-else
-    M118 S{"Lane "^var.lane_number^" is not loaded so nothing to measure"}
+; --- Pre-Flight Check ---
+if !global.AFC_lanes[var.unit_number][var.lane_number][0]
+    M291 P{"Error: Unit "^var.unit_number^": Lane " ^ var.lane_number ^ " is not marked as Loaded. Aborting."} R"Calibration Failed" S2
     abort
+
+; ==========================================================================================
+; Setup
+; ==========================================================================================
+M291 P{"Calibrating Unit "^var.unit_number^": Lane " ^ var.lane_number ^ "..."} R"System Busy" S0 T{var.msg_time}
+
+; Setup Motor
+M98 P"0:/sys/AFC/Macros/axis_setup.g" A{var.tool_number}
+set var.total_axis = #move.axes
+M584 P{var.total_axis}
+
+; ==========================================================================================
+; Step 1: Find Start Position (Home to Load Switch)
+; ==========================================================================================
+M291 P"Homing to Load Switch..." R"Step 1/2" S0 T{var.msg_time}
+
+; 1. Enable DC Motor (Reverse) - Based on your snippet
+M98 P"0:/sys/AFC/Macros/dc_motors.g" A"R" B{var.tool_number}
+M400
+
+; 2. Configure Load Switch as Low Endstop (Min)
+; Using the syntax from your snippet: P{"!"^...} checks for the switch triggering.
+
+if global.AFC_mainboard[var.unit_number] == 1
+    while iterations < global.AFC_unit_total_lanes[var.unit_number]
+        M581 P{global.AFC_trigger_input_numbers[var.unit_number][iterations]} R-1 T{global.AFC_trigger_numbers[var.unit_number][iterations]}
+        M950 J{global.AFC_trigger_input_numbers[var.unit_number][iterations]} C"nil" 
+
+M574 'f1 S1 P{"!"^global.AFC_load_switch[var.unit_number][var.lane_number]}
+
+; 3. Set a temporary position so the printer thinks it has room to rewind
+; We add 200mm to the known length just in case the software count was off.
+if global.AFC_lanes[var.unit_number][var.lane_number][1] > 0
+    G92 'f{global.AFC_lanes[var.unit_number][var.lane_number][1] + 200} 
+else
+    G92 'f{var.safety_dist}
+
+; 4. Home Backwards (The "Unload" move)
+; This pulls the filament back until the Load Switch triggers.
+G1 H4 'f0 F{global.AFC_load_retract_speed[var.unit_number][1]*60}
+M400
+
+; 5. Set True Zero
+; We are now exactly at the Load Switch. Set this as 0.
+G92 'f0
+
+; Turn off DC Motor temporarily while we switch direction
+M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}
+
+; ==========================================================================================
+; Step 2: Measure to Hub Switch
+; ==========================================================================================
+M291 P"Measuring to Hub Switch..." R"Step 2/2" S0 T{var.msg_time}
+
+; 1. Configure Hub Switch as High Endstop (Max)
+; We also disable the Low endstop (P"nil") so it doesn't conflict.
+M574 'f1 P"nil"
+M574 'f2 S1 P{global.AFC_hub_switch[var.unit_number]}
+
+; 3. Measure Forward
+; Moves forward until Hub Switch triggers. H4 updates the machine position.
+G1 H4 'f{var.safety_dist} F{global.AFC_load_retract_speed[var.unit_number][0]*60}
+M400
+
+G91                                                                                                                   ; This sets the system into relative mode.
+G1 'f{-global.AFC_hub_retract_distance[var.unit_number]} F{global.AFC_load_retract_speed[var.unit_number][1]*60}                                        ; This retracts the filament by a set amount so it's no longer triggering the hub switch.
+G90                                                                                                                   ; This sets the system back into absolute mode.
+M400                                                                                                                  ; This waits for all movement to stop.
+
+; 4. Capture Measurement
+set global.AFC_lanes[var.unit_number][var.lane_number][1] = move.axes[{global.Machine_om_axis_number}].machinePosition
+
+; ==========================================================================================
+; Step 3: Retract to Start & Save
+; ==========================================================================================
+M291 P"Saving and Retracting..." R"Finishing" S0 T{var.msg_time}
+
+; Save to File
+M98 P"0:/sys/AFC/Macros/save_status.g"
+
+; Switch DC Motor to Reverse
+M98 P"0:/sys/AFC/Macros/dc_motors.g" A"R" B{var.tool_number}
+M400
+
+; Retract back to 0 (The Load Switch)
+G1 'f0 F{global.AFC_load_retract_speed[var.unit_number][1]*60}
+M400
+
+; Turn everything off
+M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}
+M574 'f2 S1 P"nil"
+M584 P{var.total_axis-1}
+
+if global.AFC_mainboard[var.unit_number] == 1
+    while iterations < global.AFC_unit_total_lanes[var.unit_number]
+        M950 J{global.AFC_trigger_input_numbers[var.unit_number][iterations]} C{global.AFC_prep_switch[var.unit_number][iterations]}
+        M581 P{global.AFC_trigger_input_numbers[var.unit_number][iterations]} R2 T{global.AFC_trigger_numbers[var.unit_number][iterations]} S1
+
+; Final Report
+M291 P{"Calibration Complete. Unit "^var.unit_number^": Lane " ^ var.lane_number ^ " Length: " ^ global.AFC_lanes[var.unit_number][var.lane_number][1] ^ "mm"} R"Success" S1

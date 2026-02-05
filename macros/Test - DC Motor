@@ -1,0 +1,132 @@
+; ==========================================================================================
+; DC Motor Test Script
+; Used to test individual lanes or all lanes, either continuously or for a fixed duration.
+; ==========================================================================================
+
+; --- Initialization ---
+var lane_number = 0
+var tool_number = 0
+var unit_number = 0
+var direction = "F"                                                                 ; Motor direction: "F" (Forward), "R" (Reverse), "B" (Both)
+var continuously = false                                                            ; Flag: true = run until stopped, false = run for fixed time
+var run_time = 5
+var is_all_lanes = false
+
+; --- User Input: Lane Selection ---
+; Display a menu to select a specific lane or the 'All' option
+if #global.M291_data[0] != 1
+    M291 P"Select the Unit" K{global.M291_data[0]} S4 J1
+    set var.unit_number = input
+else
+    set var.unit_number = 0
+M291 P"Select the lane DC motor to test" K{global.M291_data[2][var.unit_number]} S4 J1
+if input == global.AFC_unit_total_lanes[var.unit_number]
+    set var.is_all_lanes = true
+else
+    set var.lane_number = input
+if !var.is_all_lanes
+    set var.tool_number = global.AFC_lane_to_tool[var.unit_number][var.lane_number]
+
+; --- User Input: Duration ---
+; Only ask for duration if a SPECIFIC lane is selected (Skipped if 'All' is selected)
+if !var.is_all_lanes
+    M291 P{"Run Continuously or for "^var.run_time^" Seconds?"} K{"Continuously", {var.run_time^" Seconds"}} S4 J1
+    if input == 0
+        set var.continuously = true
+    elif input == 1
+        set var.continuously = false
+
+; --- User Input: Direction ---
+; Logic differs based on whether we are running continuously or timed
+if !var.continuously
+                                                                                    ; TIMED MODE: Allow "Both" (Forward then Reverse) as an option
+    M291 P"Select the Motor Direction" K{"Forwards", "Reverse", "Both"} S4 J1
+    if input == 0
+        set var.direction = "F"
+    elif input == 1
+        set var.direction = "R"
+    elif input == 2
+        set var.direction = "B"
+else
+                                                                                    ; CONTINUOUS MODE: Only allow Forward or Reverse (Cannot run "Both" simultaneously)
+    M291 P"Select the Motor Direction" K{"Forwards", "Reverse"} S4 J1
+    if input == 0
+        set var.direction = "F"
+    elif input == 1
+        set var.direction = "R"
+
+; ==========================================================================================
+; Execution Block: Timed Run (5 Seconds)
+; ==========================================================================================
+if !var.continuously
+    M291 P{"Ready to activate the motor for "^var.run_time^" Seconds?"} S3                           ; Blocking confirmation dialog
+
+                                                                                    ; --- Scenario A: "All" Lanes Selected ---
+    if var.is_all_lanes
+        while iterations < global.AFC_unit_total_lanes[var.unit_number]                                   ; Loop through every lane
+            
+                                                                                    ; Case A1: Single Direction (Forward OR Reverse)
+            if var.direction != "B"
+                M98 P"0:/sys/AFC/Macros/dc_motors.g" A{var.direction} B{global.AFC_lane_to_tool[var.unit_number][iterations]} ; Start motor
+                M400                                                                ; Wait for move buffer to clear
+                G4 S{var.run_time}                                                  ; Dwell/Run for 5 seconds
+                M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{global.AFC_lane_to_tool[var.unit_number][iterations]}             ; Stop motor
+            
+                                                                                    ; Case A2: Both Directions (Forward THEN Reverse)
+            else
+                                                                                    ; Run Forward
+                M98 P"0:/sys/AFC/Macros/dc_motors.g" A"F" B{global.AFC_lane_to_tool[var.unit_number][iterations]} 
+                M400
+                G4 S{var.run_time}                                                  ; Run for 5 seconds
+                M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{global.AFC_lane_to_tool[var.unit_number][iterations]}             ; Stop
+                
+                M400
+                G4 S1                                                               ; Pause 1s to protect motor/gearbox
+                
+                                                                                    ; Run Reverse
+                M98 P"0:/sys/AFC/Macros/dc_motors.g" A"R" B{global.AFC_lane_to_tool[var.unit_number][iterations]} 
+                M400
+                G4 S{var.run_time}                                                  ; Run for 5 seconds
+                M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{global.AFC_lane_to_tool[var.unit_number][iterations]}             ; Stop
+
+                                                                                    ; --- Scenario B: Single Lane Selected ---
+    else
+                                                                                    ; Case B1: Single Direction
+        if var.direction != "B"
+            M98 P"0:/sys/AFC/Macros/dc_motors.g" A{var.direction} B{global.AFC_lane_to_tool[var.unit_number][var.lane_number]} 
+            M400
+            G4 S{var.run_time}                                                      ; Run for 5 seconds
+            M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{global.AFC_lane_to_tool[var.unit_number][var.lane_number]} 
+        
+                                                                                    ; Case B2: Both Directions
+        else 
+                                                                                    ; Run Forward
+            M98 P"0:/sys/AFC/Macros/dc_motors.g" A"F" B{global.AFC_lane_to_tool[var.unit_number][var.lane_number]} 
+            M400
+            G4 S{var.run_time}
+            M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{global.AFC_lane_to_tool[var.unit_number][var.lane_number]} 
+            
+            M400
+            G4 S1                                                                   ; Pause 1s
+            
+                                                                                    ; Run Reverse
+            M98 P"0:/sys/AFC/Macros/dc_motors.g" A"R" B{global.AFC_lane_to_tool[var.unit_number][var.lane_number]} 
+            M400
+            G4 S{var.run_time}
+            M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{global.AFC_lane_to_tool[var.unit_number][var.lane_number]} 
+
+; ==========================================================================================
+; Execution Block: Continuous Run
+; ==========================================================================================
+else
+                                                                                    ; This block only runs for a specific lane (logic prevents "All" + "Continuous")
+    M291 P"Ready to activate the motor continuously?" S3                            ; Confirmation to Start
+    
+                                                                                    ; Start the motor
+    M98 P"0:/sys/AFC/Macros/dc_motors.g" A{var.direction} B{global.AFC_lane_to_tool[var.unit_number][var.lane_number]} 
+    
+                                                                                    ; Keep the motor running until the user clicks OK on this dialog
+    M291 P"Ready to deactivate the motor" S3              
+    
+                                                                                    ; Stop the motor
+    M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{global.AFC_lane_to_tool[var.unit_number][var.lane_number]}
