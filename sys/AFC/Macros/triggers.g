@@ -50,7 +50,7 @@ if !sensors.endstops[{global.Machine_om_axis_number}].triggered                 
          
                                                                                                               ; --- Optional Filament Retract/Pre-positioning ---
 
-        if global.AFC_lanes[var.unit_number][var.lane_number][1] !==0                                           ; If a previous first-load length is recorded (meaning filament was fully loaded once).
+        if global.AFC_lanes[var.unit_number][var.lane_number][1] !== 0                                           ; If a previous first-load length is recorded (meaning filament was fully loaded once).
                                                                                                             ; G1: Perform an absolute move to retract the filament to the known "first length" position.
             G1 'f{global.AFC_lanes[var.unit_number][var.lane_number][1]} F{global.AFC_load_retract_speed[var.unit_number][0]*60} ; Move the filament back to a calculated parking position.
         M400

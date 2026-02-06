@@ -247,6 +247,16 @@ var h_s_p = "^"
 
 ;var neopixel_quantity = 4
 
+set global.AFC_leds_per_lane[var.unit_number] = 6
+set global.AFC_leds_per_port[var.unit_number] = 12
+set global.AFC_leds_reverse_lane_order[var.unit_number] = {true, false} ; Assuming both ports are reversed, user can adjust.
+
+set global.AFC_neopixel[var.unit_number][0] = {"120.neopixel2","120.neopixel3"}
+set global.AFC_neopixel[var.unit_number][1] = {1,2}
+set global.AFC_neopixel[var.unit_number][2] = {1,1}
+set global.AFC_neopixel[var.unit_number][3] = {12,12}
+set global.AFC_neopixel_port_qty[var.unit_number] = 2
+
 ;** This is the output numbers for the DC motors
 ;** Used by M950. Change if you already have outputs setup
 ;** The array size must not be increased

@@ -231,6 +231,25 @@ else
 
 ;var h_s_p = "^"
 
+;** This is the number of neopixels per lane
+
+;set global.AFC_leds_per_lane[var.unit_number] = 1
+
+;** This sets the number of LEDs per port
+
+;set global.AFC_leds_per_port[var.unit_number] = 4
+
+;** This sets the number of neopixel ports
+
+;set global.AFC_neopixel_port_qty[var.unit_number] = 1
+
+;** This sets whether any of the leds strips are reversed
+;** This can be more than 1 value if there is more than one port. 
+;** Can be true or false
+;** If it is a single value make sure it is followed by a comma
+
+; set global.AFC_leds_reverse_lane_order[var.unit_number] = {false,}
+
 ;** This is the neopixel pin name
 
 ;var neopixel_pin = "neopixel1"

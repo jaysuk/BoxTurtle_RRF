@@ -73,21 +73,21 @@ while iterations < #global.Machine_extruder_info
 ; 7 = acceleration
 if !global.multiple_tools
 set var.driver[var.total_extruders+1] = global.AFC_steppers[var.unit_number][var.lane_number][0]
-set var.accel[var.total_extruders+1] = global.AFC_steppers[unit_number][var.lane_number][7]
-set var.current[var.total_extruders+1] = global.AFC_steppers[unit_number][var.lane_number][4]
-set var.jerk[var.total_extruders+1] = global.AFC_steppers[unit_number][var.lane_number][5] * 60
-set var.stepping[var.total_extruders+1] = global.AFC_steppers[unit_number][var.lane_number][2]
-set var.speed[var.total_extruders+1] = global.AFC_steppers[unit_number][var.lane_number][6] * 60
-set var.stepspermm[var.total_extruders+1] = global.AFC_steppers[unit_number][var.lane_number][3]
+set var.accel[var.total_extruders+1] = global.AFC_steppers[var.unit_number][var.lane_number][7]
+set var.current[var.total_extruders+1] = global.AFC_steppers[var.unit_number][var.lane_number][4]
+set var.jerk[var.total_extruders+1] = global.AFC_steppers[var.unit_number][var.lane_number][5] * 60
+set var.stepping[var.total_extruders+1] = global.AFC_steppers[var.unit_number][var.lane_number][2]
+set var.speed[var.total_extruders+1] = global.AFC_steppers[var.unit_number][var.lane_number][6] * 60
+set var.stepspermm[var.total_extruders+1] = global.AFC_steppers[var.unit_number][var.lane_number][3]
 elif global.multiple_tools
     if global.tool_and_motion[0][0] == global.tool_and_motion[var.unit_number][0]
         set var.driver[var.total_extruders+1] = global.AFC_steppers[var.unit_number][var.lane_number][0]
-        set var.accel[var.total_extruders+1] = global.AFC_steppers[unit_number][var.lane_number][7]
-        set var.current[var.total_extruders+1] = global.AFC_steppers[unit_number][var.lane_number][4]
-        set var.jerk[var.total_extruders+1] = global.AFC_steppers[unit_number][var.lane_number][5] * 60
-        set var.stepping[var.total_extruders+1] = global.AFC_steppers[unit_number][var.lane_number][2]
-        set var.speed[var.total_extruders+1] = global.AFC_steppers[unit_number][var.lane_number][6] * 60
-        set var.stepspermm[var.total_extruders+1] = global.AFC_steppers[unit_number][var.lane_number][3]
+        set var.accel[var.total_extruders+1] = global.AFC_steppers[var.unit_number][var.lane_number][7]
+        set var.current[var.total_extruders+1] = global.AFC_steppers[var.unit_number][var.lane_number][4]
+        set var.jerk[var.total_extruders+1] = global.AFC_steppers[var.unit_number][var.lane_number][5] * 60
+        set var.stepping[var.total_extruders+1] = global.AFC_steppers[var.unit_number][var.lane_number][2]
+        set var.speed[var.total_extruders+1] = global.AFC_steppers[var.unit_number][var.lane_number][6] * 60
+        set var.stepspermm[var.total_extruders+1] = global.AFC_steppers[var.unit_number][var.lane_number][3]
         set var.driver[var.total_extruders+2] = move.extruders[var.last_extruder].driver
         set var.accel[var.total_extruders+2] = move.extruders[var.last_extruder].acceleration
         set var.current[var.total_extruders+2] = move.extruders[var.last_extruder].current
@@ -104,12 +104,12 @@ elif global.multiple_tools
         set var.speed[var.total_extruders+1] = move.extruders[var.last_extruder-1].speed
         set var.stepspermm[var.total_extruders+1] = move.extruders[var.last_extruder-1].stepsPerMm
         set var.driver[var.total_extruders+2] = global.AFC_steppers[var.unit_number][var.lane_number][0]
-        set var.accel[var.total_extruders+2] = global.AFC_steppers[unit_number][var.lane_number][7]
-        set var.current[var.total_extruders+2] = global.AFC_steppers[unit_number][var.lane_number][4]
-        set var.jerk[var.total_extruders+2] = global.AFC_steppers[unit_number][var.lane_number][5] * 60
-        set var.stepping[var.total_extruders+2] = global.AFC_steppers[unit_number][var.lane_number][2]
-        set var.speed[var.total_extruders+2] = global.AFC_steppers[unit_number][var.lane_number][6] * 60
-        set var.stepspermm[var.total_extruders+2] = global.AFC_steppers[unit_number][var.lane_number][3]
+        set var.accel[var.total_extruders+2] = global.AFC_steppers[var.unit_number][var.lane_number][7]
+        set var.current[var.total_extruders+2] = global.AFC_steppers[var.unit_number][var.lane_number][4]
+        set var.jerk[var.total_extruders+2] = global.AFC_steppers[var.unit_number][var.lane_number][5] * 60
+        set var.stepping[var.total_extruders+2] = global.AFC_steppers[var.unit_number][var.lane_number][2]
+        set var.speed[var.total_extruders+2] = global.AFC_steppers[var.unit_number][var.lane_number][6] * 60
+        set var.stepspermm[var.total_extruders+2] = global.AFC_steppers[var.unit_number][var.lane_number][3]
 
 if var.extruder == 1         
     M584 E{var.driver}   

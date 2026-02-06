@@ -35,7 +35,7 @@ var countdown = 0
 ; 1. Hub Status Check
 ; ==========================================================================================
 while iterations <  #global.AFC_unit_CAN_ids
-    var.curUnit = iterations
+    set var.curUnit = iterations
 
     M950 J{global.AFC_hub_input_number[var.curUnit]} C{global.AFC_hub_switch[var.curUnit]}                                                       ; Map the logical input 'J' to the physical pin 'C' for the hub filament switch.
     M400                                                                                                                   ; Wait for any previously queued commands to complete.
@@ -134,7 +134,7 @@ while iterations <  #global.AFC_unit_CAN_ids
     if !var.hub_empty[var.curUnit]
         M950 J{global.AFC_hub_input_number[var.curUnit]} C{global.AFC_hub_switch[var.curUnit]}
         M400
-        if sensors.gpIn[global.AFC_hub_input_number[var.curUnit]].value = 0
+        if sensors.gpIn[global.AFC_hub_input_number[var.curUnit]].value == 0
             set var.hub_empty = true                                                                                       ; Re-check the hub switch state.
             M950 J{global.AFC_hub_input_number[var.curUnit]} C"nil"
         else

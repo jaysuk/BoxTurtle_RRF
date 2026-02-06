@@ -31,7 +31,7 @@ var tool_number = param.A
 var unit_number = global.Tool_to_AFC[var.tool_number][0]                                                          ; Get Unit ID
 var lane_number = global.Tool_to_AFC[var.tool_number][1]
 
-M118 S{"Unit " ^ var.unit_number ^ " Lane " ^ var.lane_number ^ "is being unloaded."}                                                                  ; This message is to confirm the lane being unloaded
+M118 S{"Unit " ^ var.unit_number ^ " Lane " ^ var.lane_number ^ " is being unloaded."}                                                                  ; This message is to confirm the lane being unloaded
 
 set var.first_length = global.AFC_lanes[var.unit_number][var.lane_number][2]                                              ; This sets the variable to the measured first length
 set var.unload_length = var.first_length + 50                                                                       ; This is to give an extra length during unloading
@@ -43,7 +43,11 @@ M98 P"0:/sys/AFC/Macros/axis_setup.g" A{var.tool_number}                        
 M584 P{#move.axes}                                                                                                  ; This unhides any hidden axes
 set var.total_axis = #move.axes                                                                                     ; This recounts the number of axis and sets it to a variable to be used later
 
-if AFC_lanes[var.unit_number][var.lane_number][0] == true                                                                ; This checks whether the lane has been marked as being loaded filament. It will not run if it hasn't
+if global.AFC_lanes[var.unit_number][var.lane_number][0] == true                                                                ; This checks whether the lane has been marked as being loaded filament. It will not run if it hasn't
+    if global.AFC_mainboard[var.unit_number] == 1
+    while iterations < global.AFC_unit_total_lanes[var.unit_number]
+        M581 P{global.AFC_trigger_input_numbers[var.unit_number][iterations]} R-1 T{global.AFC_trigger_numbers[var.unit_number][iterations]}
+        M950 J{global.AFC_trigger_input_numbers[var.unit_number][iterations]} C"nil" 
     M574 'f1 P{"!"^global.AFC_load_switch[var.unit_number][var.lane_number]} S1                                                      ; This sets the load switch as a GPIO so we can do a sanity check to make sure the filament has been unloaded
     G92 'f{var.unload_length}                                                                                       ; This sets the axis position to the unload length, which is 50mm more than the first length
     if var.DC_motor == 1                                                                                            ; This is the check whether the DC motor is required to run
@@ -74,6 +78,7 @@ if AFC_lanes[var.unit_number][var.lane_number][0] == true                       
             M400                                                                                                    ; This just makes sure the above command runs
             M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}                                            ; This ensures the DC motor is off regardless of whether it was commanded to be on
             M400                                                                                                    ; This just makes sure the above command runs
+            set global.AFC_lanes[var.unit_number][var.lane_number][4][0] = "None"
             if sensors.endstops[{global.Machine_om_axis_number}].triggered                                                  ; This checks to make sure the filament has been unloaded
                 set global.AFC_lane_loaded[var.unit_number][var.lane_number] = false                                               ; This marks the lane as having no filament loaded
                 M400                                                                                                ; This just makes sure the above command runs
@@ -88,3 +93,8 @@ if AFC_lanes[var.unit_number][var.lane_number][0] == true                       
     M584 P{var.total_axis-1}                                                                                        ; This hides the axis used for movement
 else
     M118 S{"No Filament Loaded in Unit " ^ var.unit_number ^ " Lane "^{var.lane_number}^" to Unload"}                                            ; If no filament is recorded as being loaded in the lane, this message will display
+
+if global.AFC_mainboard[var.unit_number] == 1
+    while iterations < global.AFC_unit_total_lanes[var.unit_number]
+        M950 J{global.AFC_trigger_input_numbers[var.unit_number][iterations]} C{global.AFC_prep_switch[var.unit_number][iterations]}
+        M581 P{global.AFC_trigger_input_numbers[var.unit_number][iterations]} R2 T{global.AFC_trigger_numbers[var.unit_number][iterations]} S1

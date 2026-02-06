@@ -244,7 +244,7 @@ while iterations < #global.AFC_unit_CAN_ids
 global AFC_TN_switches = vector(#global.AFC_unit_CAN_ids, {"SW", "SW"})
 while iterations < #global.AFC_unit_CAN_ids
     set var.curUnit = iterations
-    set var.tn_start_number = 10
+    set var.tn_start_number = 11
     set var.tnsp = ""
     set global.AFC_TN_switches[var.curUnit][0] = var.tnsp ^ global.AFC_unit_CAN_ids[var.curUnit] ^ "." ^ global.AFC_TN_switches[var.curUnit][0] ^ var.tn_start_number
     set global.AFC_TN_switches[var.curUnit][1] = var.tnsp ^ global.AFC_unit_CAN_ids[var.curUnit] ^ "." ^ global.AFC_TN_switches[var.curUnit][1] ^ (var.tn_start_number + 1)
@@ -257,19 +257,33 @@ while iterations < #global.AFC_unit_CAN_ids
     set var.hsp = "^"
     set global.AFC_hub_switch[var.curUnit] = var.hsp ^ global.AFC_unit_CAN_ids[var.curUnit] ^ "." ^ global.AFC_hub_switch[var.curUnit] ^ var.hub_start_number
 
-; --- Neopixel Configuration ---
-global AFC_neopixel = vector(#global.AFC_unit_CAN_ids, {{"neopixel1",}, {0,}, {2,}, {0,}})
+global AFC_leds_per_lane = vector(#global.AFC_unit_CAN_ids, 1)
+global AFC_leds_per_port = vector(#global.AFC_unit_CAN_ids, 4)
+global AFC_neopixel_port_qty = vector(#global.AFC_unit_CAN_ids, 1)
+global AFC_leds_reverse_lane_order = vector(#global.AFC_unit_CAN_ids, 0)
+
 ; 0 = neopixel pin string
 ; 1 = LED strip number (logical index)
 ; 2 = LED Type
-; 3 = No. of LEDs in the strip (Matches lane count)
+; 3 = No. of LEDs in the strip
+global AFC_neopixel = vector(#global.AFC_unit_CAN_ids, 0)
+
 var neopixel_start_number = 0
 while iterations < #global.AFC_unit_CAN_ids
     set var.curUnit = iterations
-    set global.AFC_neopixel[var.curUnit][0][0] = global.AFC_unit_CAN_ids[var.curUnit] ^ "." ^ global.AFC_neopixel[var.curUnit][0][0]
-    set global.AFC_neopixel[var.curUnit][1][0] = var.neopixel_start_number
-    set global.AFC_neopixel[var.curUnit][3][0] = global.AFC_unit_total_lanes[var.curUnit]
-    set var.neopixel_start_number = var.neopixel_start_number + 1
+    set global.AFC_neopixel[var.curUnit] = vector(4, 0)
+    set global.AFC_neopixel[var.curUnit][0] = vector(global.AFC_neopixel_port_qty[var.curUnit], "")
+    set global.AFC_neopixel[var.curUnit][1] = vector(global.AFC_neopixel_port_qty[var.curUnit], 0)
+    set global.AFC_neopixel[var.curUnit][2] = vector(global.AFC_neopixel_port_qty[var.curUnit], 2) ; Type 2 default
+    set global.AFC_neopixel[var.curUnit][3] = vector(global.AFC_neopixel_port_qty[var.curUnit], global.AFC_leds_per_port[var.curUnit])
+    
+    var port_idx = 0
+    set global.AFC_leds_reverse_lane_order[var.curUnit] = vector(global.AFC_neopixel_port_qty[var.curUnit], false)
+    while var.port_idx < global.AFC_neopixel_port_qty[var.curUnit]
+        set global.AFC_neopixel[var.curUnit][0][var.port_idx] = global.AFC_unit_CAN_ids[var.curUnit] ^ ".neopixel" ^ (var.port_idx + 1)
+        set global.AFC_neopixel[var.curUnit][1][var.port_idx] = var.neopixel_start_number
+        set var.neopixel_start_number = var.neopixel_start_number + 1
+        set var.port_idx = var.port_idx + 1
 
 ; --- Output Pin Index ---
 global AFC_dcm_out_no = {0, 1, 2}
