@@ -14,11 +14,11 @@ var last_extruder = #move.extruders - 1
 var count = 0
 
 if !exists(param.A)                                                                   ; Check if lane number parameter exists
-    echo "Missing the A parameter for the lane number"                                ; Error message
+    M118 S"Missing the A parameter for the lane number"                                ; Error message
     abort                                                                             ; Stop execution
 
 if !exists(param.B)                                                                   ; Check if map/unmap parameter exists
-    echo "Missing the B parameter for whether to map or unmap the extruder"           ; Error message
+    M118 S"Missing the B parameter for whether to map or unmap the extruder"           ; Error message
     abort                                                                             ; Stop execution
 
 ;var toolNumber = param.A                                                              ; Assign parameter A to local variable

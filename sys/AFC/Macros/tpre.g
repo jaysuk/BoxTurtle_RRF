@@ -12,7 +12,7 @@
 ; 8 = spoolman support
 
 if !exists(param.A)                                                                                             ; This just checks if the lane number has been provided.
-    echo "Missing the lane number"                                                                              ; Echo error message
+    M118 S"Missing the lane number"                                                                              ; Echo error message
     abort                                                                                                       ; Stop execution
 
 set global.AFC_time=state.upTime                                                                                ; This is to record the time at the start of the tool load process

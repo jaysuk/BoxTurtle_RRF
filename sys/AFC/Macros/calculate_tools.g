@@ -123,8 +123,6 @@ while iterations < global.AFC_unit_total_available_lanes
     while iterations < #global.Machine_actual_tools[global.tool_and_motion[var.curUnit][0]][0]
         set var.D[iterations] = global.Machine_actual_tools[global.tool_and_motion[var.curUnit][0]][0][iterations]
     set var.D[#global.Machine_actual_tools[global.tool_and_motion[var.curUnit][0]][0]] = #global.Machine_extruder_info
-    ;var D = {global.Machine_actual_tools[global.tool_and_motion[var.curUnit][0]][0],#global.Machine_extruder_info}
-    echo var.D
     var H = {global.Machine_actual_tools[global.tool_and_motion[var.curUnit][0]][2]}
     var F = {global.Machine_actual_tools[global.tool_and_motion[var.curUnit][0]][1]}
     if !global.multiple_tools

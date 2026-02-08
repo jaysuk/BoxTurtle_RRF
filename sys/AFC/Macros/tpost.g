@@ -12,7 +12,7 @@
 
 ; --- Parameter Validation ---
 if !exists(param.A)
-    echo "Missing the lane number"
+    M118 S"Missing the lane number"
     abort
 
 ; --- Variable Initialization ---
@@ -84,7 +84,7 @@ set var.time=var.tpost_time-var.tpre_time                                       
 set var.time_minutes=floor(var.time/60)                                                                                                    ; Calculate minutes.
 set var.time_seconds=var.time-(var.time_minutes*60)                                                                                        ; Calculate seconds.
 
-echo "The tool load time was "^var.time^" seconds ("^var.time_minutes^" minutes and "^var.time_seconds^" seconds)"
+M118 S"The tool load time was "^var.time^" seconds ("^var.time_minutes^" minutes and "^var.time_seconds^" seconds)"
 
 ; --- Spoolman Integration ---
 if global.Machine_features[8] == 1                                                                                                         ; Check if Spoolman feature is enabled (Index 8).

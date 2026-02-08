@@ -152,4 +152,4 @@ set var.time_minutes=floor(var.time/60)                                         
 set var.time_seconds=var.time-(var.time_minutes*60)                                                                          ; Calculate remaining seconds
 
 if !exists(param.C)                                                                                                          ; If output is not suppressed
-    echo "The tool unload time was "^var.time^" seconds ("^var.time_minutes^" minutes"
+    M118 S"The tool unload time was "^var.time^" seconds ("^var.time_minutes^" minutes and "^var.time_seconds^" seconds)"

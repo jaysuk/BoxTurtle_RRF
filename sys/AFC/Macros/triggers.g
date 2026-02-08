@@ -18,7 +18,7 @@
 
 ; --- Parameter Validation ---
 if !exists(param.A)                                                                                           ; Check if the required 'A' parameter (tool number) was passed to the macro.
-    echo "Missing the Tool number"                                                                            ; Report the error.
+    M118 S"Missing the Tool number"                                                                            ; Report the error.
     abort                                                                                                     ; Stop macro execution if the parameter is missing.
 
 var tool_number = param.A                                                                                       ; Assign the input parameter to a local variable for easier use.

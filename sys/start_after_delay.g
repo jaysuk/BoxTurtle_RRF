@@ -52,7 +52,7 @@ else
 		set var.FileName=job.file.fileName
 ;sanity check beep
 if var.BeepDuration > 1000
-	echo "Invalid beep duration - reset to 1/2 second)
+	M118 S"Invalid beep duration - reset to 1/2 second"
 	set var.BeepDuration = 1000
 	
 ; sanity check default delay times
@@ -66,7 +66,7 @@ if (var.LongDelay < var.MediumDelay)
 if !exists(param.R)
 	if !exists(param.H)
 		if !exists(param.S)
-			echo "No parameters passed - exiting macro"
+			M118 S"No parameters passed - exiting macro"
 			M99
 var Hours = 0 ; variable for number of whole hours from start time until run time
 var Minutes = 0 ; variable for number of whole minutes from start time until run time
@@ -95,7 +95,7 @@ else
  
 var Loops = 0 ; used if a testing parameter X is passed in order to exit after number of loops has expired
  
-echo "Print start time is " ^ var.RunTime
+M118 S"Print start time is " ^ var.RunTime
  
 while state.time < var.RunTime
 	if exists(global.Cancelled)

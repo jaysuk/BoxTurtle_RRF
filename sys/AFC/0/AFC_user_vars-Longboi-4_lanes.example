@@ -10,7 +10,7 @@
 var unit_number = 0
 
 if !exists(param.A)                                                                                                                                       ; Check if the required parameter A (Tool Number) exists
-    echo "Missing the A parameter for the unit number"                                                                                                    ; Error message
+    M118 S"Missing the A parameter for the unit number"                                                                                                    ; Error message
     abort                                                                                                                                                 ; Stop macro execution
 else
     set var.unit_number = param.A                                                                                                                             ; Assign parameter to local variable for cleaner syntax

@@ -10,9 +10,6 @@ var SLP_pin=global.AFC_SLP_pins[var.unit_number][var.lane_number]  ; Get the Sle
 var DC1_pin=global.AFC_DC_pins[var.unit_number][var.lane_number][0]  ; Get the first logic pin for the motor driver
 var DC2_pin=global.AFC_DC_pins[var.unit_number][var.lane_number][1]  ; Get the second logic pin for the motor driver
 
-echo var.SLP_pin                                    ; Debug: Output the SLP pin to console
-echo param.A                                        ; Debug: Output the requested direction to console
-
 if param.A = "F" || param.A = "R"                   ; If the request is Forward or Reverse, we need to configure the pins
     M950 P{global.AFC_dcm_out_no[0]} C{var.SLP_pin} ; Configure Sleep/Enable pin to the logical P number defined in globals
     M950 P{global.AFC_dcm_out_no[1]} C{var.DC1_pin} ; Configure Logic Pin 1 to the logical P number defined in globals
