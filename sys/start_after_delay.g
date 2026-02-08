@@ -104,8 +104,8 @@ while state.time < var.RunTime
 			G4 S3
 			abort "Deferred print cancelled."
 
-	if exists(global.soakTimeOverride)
-		if global.soakTimeOverride = true
+	if exists(global.Machine_soak_time_override)
+		if global.Machine_soak_time_override = true
 			M291 P"Soak Time Overriden" S0 T3
 			break
 	
