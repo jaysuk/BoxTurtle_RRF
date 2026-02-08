@@ -195,7 +195,7 @@ while iterations <  #global.AFC_unit_CAN_ids
                         M98 P"0:/macros/Lane - Mark Unloaded" A{var.tool_to_load}                                                    ; If the filament failed to reach the hub switch, it's considered unloaded, so run cleanup macro.
                     
                                                                                                                             ; Cleanup
-                    M84 'f                                                                                                     ; Disable (idle) the motor associated with the temporary 'F' axis.
+                    M18 'f                                                                                                     ; Disable (idle) the motor associated with the temporary 'F' axis.
                     M574 'f1 P"nil" S1                                                                                         ; Disable the 'F' axis endstop.
                     M400
                     M584 P{var.total_axis-1}                                                                                   ; Hide the temporary 'F' axis again.

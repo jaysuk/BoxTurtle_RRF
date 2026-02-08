@@ -177,7 +177,7 @@ global AFC_hub_load_distance = vector(#global.AFC_unit_CAN_ids, {35, 5})
 global AFC_tn_retract_distance = vector(#global.AFC_unit_CAN_ids, 15)
 
 ; --- Feature Configuration ---
-global AFC_features=vector(#global.AFC_unit_CAN_ids, {false, 0})
+global AFC_features=vector(#global.AFC_unit_CAN_ids, {true, 0})
 ; 0 = use dc motors (true/false)
 ; 1 = unload method (0=hubswitch, 1=lengths)
 

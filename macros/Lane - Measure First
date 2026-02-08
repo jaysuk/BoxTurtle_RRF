@@ -50,8 +50,9 @@ M584 P{var.total_axis}
 M291 P"Homing to Load Switch..." R"Step 1/2" S0 T{var.msg_time}
 
 ; 1. Enable DC Motor (Reverse) - Based on your snippet
-M98 P"0:/sys/AFC/Macros/dc_motors.g" A"R" B{var.tool_number}
-M400
+if global.AFC_features[var.unit_number][0]
+    M98 P"0:/sys/AFC/Macros/dc_motors.g" A"R" B{var.tool_number}
+    M400
 
 ; 2. Configure Load Switch as Low Endstop (Min)
 ; Using the syntax from your snippet: P{"!"^...} checks for the switch triggering.
@@ -79,8 +80,12 @@ M400
 ; We are now exactly at the Load Switch. Set this as 0.
 G92 'f0
 
+; We also disable the Low endstop (P"nil") so it doesn't conflict.
+M574 'f1 P"nil"
+
 ; Turn off DC Motor temporarily while we switch direction
-M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}
+if global.AFC_features[var.unit_number][0]
+    M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}
 
 ; ==========================================================================================
 ; Step 2: Measure to Hub Switch
@@ -88,8 +93,6 @@ M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}
 M291 P"Measuring to Hub Switch..." R"Step 2/2" S0 T{var.msg_time}
 
 ; 1. Configure Hub Switch as High Endstop (Max)
-; We also disable the Low endstop (P"nil") so it doesn't conflict.
-M574 'f1 P"nil"
 M574 'f2 S1 P{global.AFC_hub_switch[var.unit_number]}
 
 ; 3. Measure Forward
@@ -108,21 +111,11 @@ set global.AFC_lanes[var.unit_number][var.lane_number][1] = move.axes[{global.Ma
 ; ==========================================================================================
 ; Step 3: Retract to Start & Save
 ; ==========================================================================================
-M291 P"Saving and Retracting..." R"Finishing" S0 T{var.msg_time}
+M291 P"Saving..." R"Finishing" S0 T{var.msg_time}
 
 ; Save to File
 M98 P"0:/sys/AFC/Macros/save_status.g"
 
-; Switch DC Motor to Reverse
-M98 P"0:/sys/AFC/Macros/dc_motors.g" A"R" B{var.tool_number}
-M400
-
-; Retract back to 0 (The Load Switch)
-G1 'f0 F{global.AFC_load_retract_speed[var.unit_number][1]*60}
-M400
-
-; Turn everything off
-M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}
 M574 'f2 S1 P"nil"
 M584 P{var.total_axis-1}
 
