@@ -71,7 +71,7 @@ if var.choice == 0 || var.choice == 4
         echo >>{var.filename} " "
         ; Write logic to reduce flow ratio (0.95) for specific tools to tighten the loop
         while iterations < global.AFC_unit_total_lanes[var.unit_number]
-        set var.lane_number = iterations
+            set var.lane_number = iterations
             echo >>{var.filename} "if state.currentTool = "^global.AFC_lane_to_tool[var.unit_number][var.lane_number]
             echo >>{var.filename} "    M567 P"^global.AFC_lane_to_tool[var.unit_number][var.lane_number]^" E1:0.95"
 
