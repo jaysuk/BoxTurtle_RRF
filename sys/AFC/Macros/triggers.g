@@ -40,7 +40,6 @@ if global.AFC_mainboard[var.unit_number] == 1
 ; M574: Define endstop configuration for the temporary axis ('f').
 M574 'f1 P{global.AFC_load_switch[var.unit_number][var.lane_number]} S1                                                        ; Assign the physical pin (P) for the filament load switch of the current lane to the 'F' axis, using active-low/normal switch mode (S1).
 G92 'f0                                                                                                       ; Set the current position of the temporary 'F' axis to 0.
-M574
 if !sensors.endstops[{global.Machine_om_axis_number}].triggered                                                       ; Check if the filament is already triggering the endstop. OM = Other Motor/Temporary Axis.
     G28 'f                                                                                                    ; If not triggered, perform a homing move (G28) on the 'F' axis (motor feeds filament) until the switch is hit.
     if sensors.endstops[{global.Machine_om_axis_number}].triggered                                                    ; Check if the homing move successfully found the filament (switch triggered).
