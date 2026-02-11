@@ -29,7 +29,7 @@ while iterations < #global.AFC_unit_CAN_ids
     set var.curUnit = iterations
     set var.curPort = 0
     
-    while var.curPort < #global.AFC_neopixel[var.curUnit][0]
+    while var.curPort < global.AFC_neopixel_port_qty[var.curUnit]
         set var.curLED = 0
         set var.totalLEDs = global.AFC_neopixel[var.curUnit][3][var.curPort]
         
