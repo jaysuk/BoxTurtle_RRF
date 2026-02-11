@@ -42,7 +42,7 @@ if fileexists("0:/sys/AFC/Status/status.g")
 ; Configures the Neopixel strips for each unit.
 while iterations < #global.AFC_unit_CAN_ids
     set var.curUnit = iterations
-    while iterations < #global.AFC_neopixel[var.curUnit][0]
+    while iterations < global.AFC_neopixel_port_qty[var.curUnit]
         set var.count = iterations
         M950 E{global.AFC_neopixel[var.curUnit][1][var.count]} C{global.AFC_neopixel[var.curUnit][0][var.count]} T{global.AFC_neopixel[var.curUnit][2][var.count]} U{global.AFC_neopixel[var.curUnit][3][var.count]}
 ; M950 sets up the Neopixel strip: E is the logical index, C is the physical pin, T is the type/number of LEDs, U is the colour encoding format.
