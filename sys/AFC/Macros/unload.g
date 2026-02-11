@@ -42,12 +42,13 @@ if exists(param.B)                                                              
 M98 P"0:/sys/AFC/Macros/axis_setup.g" A{var.tool_number}                                              ; This is to ensure that the motor used for all moves is set to the correct lane
 M584 P{#move.axes}                                                                                    ; This unhides any hidden axes
 set var.total_axis = #move.axes                                                                       ; This recounts the number of axis and sets it to a variable to be used later
-
+if global.AFC_mainboard[var.unit_number] == 1
+    while iterations < global.AFC_unit_total_lanes[var.unit_number]
+        M581 P{global.AFC_trigger_input_numbers[var.unit_number][iterations]} R-1 T{global.AFC_trigger_numbers[var.unit_number][iterations]}
+        M950 J{global.AFC_trigger_input_numbers[var.unit_number][iterations]} C"nil" 
+        
 if global.AFC_lanes[var.unit_number][var.lane_number][0] == true                                      ; This checks whether the lane has been marked as being loaded filament. It will not run if it hasn't
-    if global.AFC_mainboard[var.unit_number] == 1
-        while iterations < global.AFC_unit_total_lanes[var.unit_number]
-            M581 P{global.AFC_trigger_input_numbers[var.unit_number][iterations]} R-1 T{global.AFC_trigger_numbers[var.unit_number][iterations]}
-            M950 J{global.AFC_trigger_input_numbers[var.unit_number][iterations]} C"nil" 
+    
     M574 'f1 P{"!"^global.AFC_load_switch[var.unit_number][var.lane_number]} S1                       ; This sets the load switch as a GPIO so we can do a sanity check to make sure the filament has been unloaded
     G92 'f{var.unload_length}                                                                         ; This sets the axis position to the unload length, which is 50mm more than the first length
     if var.DC_motor == 1                                                                              ; This is the check whether the DC motor is required to run
@@ -56,14 +57,18 @@ if global.AFC_lanes[var.unit_number][var.lane_number][0] == true                
     G1 H4 'f0 F{global.AFC_load_retract_speed[var.unit_number][1]*60}                                 ; This is the actual command to retract the filament back on to the spool
     M400                                                                                              ; This just makes sure the above command runs
     G92 'f{var.additional_unload}                                                                     ; This sets the axis position to the unload length, which is an additional length to make sure the filament is unloaded and passed the initial loading endstop
+    G4 S1
+    M400
     G1 'f0 F{global.AFC_load_retract_speed[var.unit_number][1]*60}                                    ; Does one final unload
     M400                                                                                              ; This just makes sure the above command runs
-    M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}                                      ; This ensures the DC motor is off regardless of whether it was commanded to be on
-    M400                                                                                              ; This just makes sure the above command runs
+    if var.DC_motor == 1    
+        M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}                                      ; This ensures the DC motor is off regardless of whether it was commanded to be on
+        M400                                                                                              ; This just makes sure the above command runs
     if sensors.endstops[{global.Machine_om_axis_number}].triggered                                    ; This checks to make sure the filament has been unloaded
         set global.AFC_lanes[var.unit_number][var.lane_number][0] = false                             ; This marks the lane as having no filament loaded
         M400                                                                                          ; This just makes sure the above command runs
         set global.AFC_LED_array[var.unit_number][var.lane_number] = 0                                ; This sets the neopixel colour for this lane to 0
+        set global.AFC_lanes[var.unit_number][var.lane_number][4][0] = "None"
         M98 P"0:/sys/AFC/Macros/leds.g"                                                               ; This runs the LED macro which sets the lane colour to red and records its status to the SD card
         M98 P"0:/sys/AFC/Macros/save_status.g"  
         M400                                                                                          ; This just makes sure the above command runs
@@ -71,28 +76,36 @@ if global.AFC_lanes[var.unit_number][var.lane_number][0] == true                
     else
         while (iterations < var.retries) && !var.retry_successful                                     ; this 
             G92 'f{var.unload_retry_length}
-            if var.DC_motor = 1                                                                       ; This is the check whether the DC motor is required to run
+            if var.DC_motor == 1                                                                      ; This is the check whether the DC motor is required to run
                 M98 P"0:/sys/AFC/Macros/dc_motors.g" A"R" B{var.tool_number}                          ; This enables the DC motor in the reseverse direction
                 M400                                                                                  ; This just makes sure the above command runs
             G1 H4 'f0 F{global.AFC_load_retract_speed[var.unit_number][1]*60}                         ; This is the actual command to retract the filament back on to the spool
             M400                                                                                      ; This just makes sure the above command runs
-            M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}                              ; This ensures the DC motor is off regardless of whether it was commanded to be on
-            M400                                                                                      ; This just makes sure the above command runs
-            set global.AFC_lanes[var.unit_number][var.lane_number][4][0] = "None"
+            G92 'f{var.additional_unload}                                                                     ; This sets the axis position to the unload length, which is an additional length to make sure the filament is unloaded and passed the initial loading endstop
+            G4 S1
+            M400
+            G1 'f0 F{global.AFC_load_retract_speed[var.unit_number][1]*60}                                    ; Does one final unload
+            M400
+            if var.DC_motor == 1    
+                M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}                              ; This ensures the DC motor is off regardless of whether it was commanded to be on
+                M400                                                                                      ; This just makes sure the above command runs
             if sensors.endstops[{global.Machine_om_axis_number}].triggered                            ; This checks to make sure the filament has been unloaded
                 set global.AFC_lanes[var.unit_number][var.lane_number][0] = false                  ; This marks the lane as having no filament loaded
                 M400                                                                                  ; This just makes sure the above command runs
                 set global.AFC_LED_array[var.unit_number][var.lane_number] = 0                        ; This sets the neopixel colour for this lane to 0
+                set global.AFC_lanes[var.unit_number][var.lane_number][4][0] = "None"
                 M98 P"0:/sys/AFC/Macros/leds.g"                                                       ; This runs the LED macro which sets the lane colour to red and records its status to the SD card
                 M98 P"0:/sys/AFC/Macros/save_status.g"
                 M400                                                                                  ; This just makes sure the above command runs
                 set var.retry_successful = true
     if var.retry_successful == false
-        M118 S{"Unit " ^ var.unit_number ^ " Lane "^{var.lane_number}^" has not been successfully unloaded. Please recheck your measurements"}
+        M118 S{"Unit " ^ var.unit_number ^ " Lane "^var.lane_number^" has not been successfully unloaded. Please recheck your measurements"}
+    else
+        M118 S{"Unit " ^ var.unit_number ^ " Lane "^var.lane_number^" has been successfully unloaded"}
     M574 'f1 P"nil" S1                                                                                ; This frees up the load switch from being used as a GPIO input
     M584 P{var.total_axis-1}                                                                          ; This hides the axis used for movement
 else
-    M118 S{"No Filament Loaded in Unit " ^ var.unit_number ^ " Lane "^{var.lane_number}^" to Unload"} ; If no filament is recorded as being loaded in the lane, this message will display
+    M118 S{"No Filament Loaded in Unit " ^ var.unit_number ^ " Lane "^var.lane_number^" to Unload"} ; If no filament is recorded as being loaded in the lane, this message will display
 
 if global.AFC_mainboard[var.unit_number] == 1
     while iterations < global.AFC_unit_total_lanes[var.unit_number]
