@@ -36,9 +36,6 @@ M118 S{"Unit " ^ var.unit_number ^ " Lane " ^ var.lane_number ^ " is being unloa
 set var.first_length = global.AFC_lanes[var.unit_number][var.lane_number][2]                          ; This sets the variable to the measured first length
 set var.unload_length = var.first_length + 50                                                         ; This is to give an extra length during unloading
 
-if exists(param.B)                                                                                    ; This is a check to see if the DC motor is required during unloading
-    set var.DC_motor = param.B                                                                        ; Sets the variable value to the B value. A value of 1 being passed to the macro would mean the DC motor is required
-
 M98 P"0:/sys/AFC/Macros/axis_setup.g" A{var.tool_number}                                              ; This is to ensure that the motor used for all moves is set to the correct lane
 M584 P{#move.axes}                                                                                    ; This unhides any hidden axes
 set var.total_axis = #move.axes                                                                       ; This recounts the number of axis and sets it to a variable to be used later
@@ -51,7 +48,7 @@ if global.AFC_lanes[var.unit_number][var.lane_number][0] == true                
     
     M574 'f1 P{"!"^global.AFC_load_switch[var.unit_number][var.lane_number]} S1                       ; This sets the load switch as a GPIO so we can do a sanity check to make sure the filament has been unloaded
     G92 'f{var.unload_length}                                                                         ; This sets the axis position to the unload length, which is 50mm more than the first length
-    if var.DC_motor == 1                                                                              ; This is the check whether the DC motor is required to run
+    if global.AFC_features[var.unit_number][0]                                                                              ; This is the check whether the DC motor is required to run
         M98 P"0:/sys/AFC/Macros/dc_motors.g" A"R" B{var.tool_number}                                  ; This enables the DC motor in the reseverse direction
         M400                                                                                          ; This just makes sure the above command runs
     G1 H4 'f0 F{global.AFC_load_retract_speed[var.unit_number][1]*60}                                 ; This is the actual command to retract the filament back on to the spool
@@ -61,7 +58,7 @@ if global.AFC_lanes[var.unit_number][var.lane_number][0] == true                
     M400
     G1 'f0 F{global.AFC_load_retract_speed[var.unit_number][1]*60}                                    ; Does one final unload
     M400                                                                                              ; This just makes sure the above command runs
-    if var.DC_motor == 1    
+    if global.AFC_features[var.unit_number][0]    
         M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}                                      ; This ensures the DC motor is off regardless of whether it was commanded to be on
         M400                                                                                              ; This just makes sure the above command runs
     if sensors.endstops[{global.Machine_om_axis_number}].triggered                                    ; This checks to make sure the filament has been unloaded
@@ -76,7 +73,7 @@ if global.AFC_lanes[var.unit_number][var.lane_number][0] == true                
     else
         while (iterations < var.retries) && !var.retry_successful                                     ; this 
             G92 'f{var.unload_retry_length}
-            if var.DC_motor == 1                                                                      ; This is the check whether the DC motor is required to run
+            if global.AFC_features[var.unit_number][0]                                                                   ; This is the check whether the DC motor is required to run
                 M98 P"0:/sys/AFC/Macros/dc_motors.g" A"R" B{var.tool_number}                          ; This enables the DC motor in the reseverse direction
                 M400                                                                                  ; This just makes sure the above command runs
             G1 H4 'f0 F{global.AFC_load_retract_speed[var.unit_number][1]*60}                         ; This is the actual command to retract the filament back on to the spool
@@ -86,7 +83,7 @@ if global.AFC_lanes[var.unit_number][var.lane_number][0] == true                
             M400
             G1 'f0 F{global.AFC_load_retract_speed[var.unit_number][1]*60}                                    ; Does one final unload
             M400
-            if var.DC_motor == 1    
+            if global.AFC_features[var.unit_number][0]   
                 M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}                              ; This ensures the DC motor is off regardless of whether it was commanded to be on
                 M400                                                                                      ; This just makes sure the above command runs
             if sensors.endstops[{global.Machine_om_axis_number}].triggered                            ; This checks to make sure the filament has been unloaded

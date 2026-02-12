@@ -19,6 +19,11 @@ if #global.M291_data[0] != 1
     set var.unit_number = input
 else
     set var.unit_number = 0
+
+if !global.AFC_features[var.unit_number][0]
+    M291 P"This unit does not have any dc motors enabled." R"Aborting..." S1
+    abort
+
 M291 P"Select the lane DC motor to test" K{global.M291_data[2][var.unit_number]} S4 J1
 if input == global.AFC_unit_total_lanes[var.unit_number]
     set var.is_all_lanes = true

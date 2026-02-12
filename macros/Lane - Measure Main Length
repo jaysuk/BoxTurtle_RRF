@@ -32,16 +32,16 @@ set var.lane_number = input
 set var.tool_number = global.AFC_lane_to_tool[var.unit_number][var.lane_number]
 
 ; Check Hub Switch (Ensure path isn't physically blocked before starting)
-M950 J{global.AFC_hub_input_number[var.unit_number]} C{global.AFC_hub_switch[var.unit_number]}
-if sensors.gpIn[global.AFC_hub_input_number[var.unit_number]].value != 0
+M950 J{global.AFC_hub_input_numbers[var.unit_number]} C{global.AFC_hub_switch[var.unit_number]}
+if sensors.gpIn[global.AFC_hub_input_numbers[var.unit_number]].value != 0
     M291 P{"Error: Filament detected in Unit "^var.unit_number^" Hub Switch! Clear path before measuring."} R"Aborted" S2
-    M950 J{global.AFC_hub_input_number[var.unit_number]} C"nil"
+    M950 J{global.AFC_hub_input_numbers[var.unit_number]} C"nil"
     abort
 
 ; Check if Selected Lane is actually loaded (Prevents grinding/air printing)
 if !global.AFC_lanes[var.unit_number][var.lane_number][0]
     M291 P{"Error: Unit "^var.unit_number^": Lane " ^ var.lane_number ^ " is not marked as Loaded. Cannot Measure."} R"Aborted" S2
-    M950 J{global.AFC_hub_input_number[var.unit_number]} C"nil"
+    M950 J{global.AFC_hub_input_numbers[var.unit_number]} C"nil"
     abort
 
 ; Retrieve known start length
@@ -114,19 +114,21 @@ M98 P"0:/sys/AFC/Macros/save_status.g"
 M291 P"Retracting Filament..." R"Step 3/3" S0 T{var.msg_time}
 
 ; Activate DC Motor (Assist)
-M98 P"0:/sys/AFC/Macros/dc_motors.g" A"R" B{var.tool_number}
-M400
+if global.AFC_features[var.unit_number][0]
+    M98 P"0:/sys/AFC/Macros/dc_motors.g" A"R" B{var.tool_number}
+    M400
 
 ; Retract Step
 G1 'f{global.AFC_lanes[var.unit_number][var.lane_number][1]} F{global.AFC_load_retract_speed[var.unit_number][1]*60}
 M400
 
 ; Stop DC Motor
-M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}
-M400
+if global.AFC_features[var.unit_number][0]
+    M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}
+    M400
 
 ; Cleanup Pins & Axes
-M950 J{global.AFC_hub_input_number[var.unit_number]} C"nil"
+M950 J{global.AFC_hub_input_numbers[var.unit_number]} C"nil"
 M584 P{var.total_axis-1}
 
 ; Final Report
