@@ -39,12 +39,6 @@ var poop = false
 ;** purge
 var purge = false
 
-;** how to load
-;** 0 = Use the turtleneck switch to load
-;** 1 = Use the measured lengths to load
-;** 2 = Use the preload switch in the filametrix to load
-var load = 0
-
 ;** carry out a startup check
 var start = false
 
@@ -348,4 +342,4 @@ set global.Machine_tip_skinnydip[4] = 0
 ;**░█░█░█░█░░░█░█░█░█░░█░░░░█▀▀░█░█░░█░░░█░░░░█▀▀░█▀█░▀▀█░░█░░░░█▀█░█▀▀░█▀▄░█▀▀░▀░▀░▀
 ;**░▀▀░░▀▀▀░░░▀░▀░▀▀▀░░▀░░░░▀▀▀░▀▀░░▀▀▀░░▀░░░░▀░░░▀░▀░▀▀▀░░▀░░░░▀░▀░▀▀▀░▀░▀░▀▀▀░▀░▀░▀
 
-set global.Machine_features={var.brush,var.cut,var.kick,var.park,var.poop,var.purge,var.load,var.start,var.spoolman} ; was AFC_features
+set global.Machine_features={var.brush,var.cut,var.kick,var.park,var.poop,var.purge,var.start,var.spoolman} ; was AFC_features

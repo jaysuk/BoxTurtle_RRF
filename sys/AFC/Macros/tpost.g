@@ -87,7 +87,7 @@ set var.time_seconds=var.time-(var.time_minutes*60)                             
 M118 S"The tool load time was "^var.time^" seconds ("^var.time_minutes^" minutes and "^var.time_seconds^" seconds)"
 
 ; --- Spoolman Integration ---
-if global.Machine_features[8] == 1                                                                                                         ; Check if Spoolman feature is enabled (Index 8).
+if global.Machine_features[7] == 1                                                                                                         ; Check if Spoolman feature is enabled (Index 8).
                                                                                                                                            ; [NOTE: Assuming Spoolman structure is updated to [Unit][Lane]]
     set global.spoolman[var.unit_number][var.lane_number][1] = true                                                                        ; Enable extrusion tracking for this lane.
     G92 E0                                                                                                                                 ; Reset extruder position.

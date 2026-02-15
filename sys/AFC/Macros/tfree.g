@@ -45,7 +45,7 @@ if (state.nextTool == -1 && tools[{var.tool_number}].active[0] <= 175)
     M116 P{var.tool_number}
 
 ; --- Spoolman Support ---
-if global.Machine_features[8] == 1                                                                                           ; Check if Spoolman feature is enabled (Index 8 in Machine_features)
+if global.Machine_features[7] == 1                                                                                           ; Check if Spoolman feature is enabled (Index 8 in Machine_features)
     set global.spoolman[var.unit_number][var.lane_number][1] = false                                                         ; Disable extrusion tracking for this lane
 
 ; --- Homing Check ---

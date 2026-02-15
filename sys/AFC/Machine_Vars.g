@@ -26,11 +26,6 @@ var park = false
 var poop = false
 ; purge
 var purge = false
-; how to load
-; 0 = Use the turtleneck switch to load
-; 1 = Use the measured lengths to load
-; 2 = Use the preload switch in the filametrix to load
-var load = 0
 ; carry out a startup check
 var start = false
 ; spoolman support
@@ -305,7 +300,7 @@ global Machine_tip_skinnydip = {30,30,70,0,0} ; was AFC_tip_skinnydip
 ;░█░█░█░█░░░█░█░█░█░░█░░░░█▀▀░█░█░░█░░░█░░░░█▀▀░█▀█░▀▀█░░█░░░░█▀█░█▀▀░█▀▄░█▀▀░▀░▀░▀
 ;░▀▀░░▀▀▀░░░▀░▀░▀▀▀░░▀░░░░▀▀▀░▀▀░░▀▀▀░░▀░░░░▀░░░▀░▀░▀▀▀░░▀░░░░▀░▀░▀▀▀░▀░▀░▀▀▀░▀░▀░▀
 
-global Machine_features={var.brush,var.cut,var.kick,var.park,var.poop,var.purge,var.load,var.start,var.spoolman} ; was AFC_features
+global Machine_features={var.brush,var.cut,var.kick,var.park,var.poop,var.purge,var.start,var.spoolman} ;
 
 ; ########## Additional Info ##########
 

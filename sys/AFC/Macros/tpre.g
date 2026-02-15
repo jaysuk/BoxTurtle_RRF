@@ -79,11 +79,11 @@ if global.AFC_lanes[var.unit_number][var.lane_number][0]                        
                 abort                                                                                           ; Stop execution
     G90                                                                                                         ; Set absolute positioning
 
-    if global.Machine_features[6] == 0                                                                          ; This checks for the feature settings (Load Method 0)
+    if global.AFC_features[2] == 0                                                                          ; This checks for the feature settings (Load Method 0)
         M98 P"0:/sys/AFC/Macros/6_0.g" A{var.tool_number} B{var.total_axis}                                   ; Execute Load Method 0
-    elif global.Machine_features[6] == 1                                                                        ; This checks for the feature settings (Load Method 1)
+    elif global.AFC_features[2] == 1                                                                        ; This checks for the feature settings (Load Method 1)
         M98 P"0:/sys/AFC/Macros/6_1.g" A{var.tool_number} B{var.total_axis}                                   ; Execute Load Method 1
-    elif global.Machine_features[6] == 2                                                                        ; This checks for the feature settings (Load Method 2)
+    elif global.AFC_features[2] == 2                                                                        ; This checks for the feature settings (Load Method 2)
         M98 P"0:/sys/AFC/Macros/6_2.g" A{var.tool_number} B{var.total_axis}                                   ; Execute Load Method 2
     else 
         M291 S2 P"Invalid Load Method Configured" R"Warning"                                                    ; Warn if no valid load method or no filament loaded

@@ -1,10 +1,10 @@
 ; Array to store CAN addresses for up to 8 BoxTurtles. 
 ; 0 = Not Installed. 
 ; Example: Unit 1 is at CAN 119.
-global AFC_unit_CAN_ids = {119,120}
+global AFC_unit_CAN_ids = {119,120,121}
 
 ; Array defining the number of lanes available on each specific BoxTurtle unit.
-global AFC_unit_total_lanes = {4,4}
+global AFC_unit_total_lanes = {4,4,2}
 
 ;░█▀▄░█▀█░░░█▀█░█▀█░▀█▀░░░█▀▀░█▀▄░▀█▀░▀█▀░░░█▀█░█▀█░█▀▀░▀█▀░░░█░█░█▀▀░█▀▄░█▀▀░█░█░█
 ;░█░█░█░█░░░█░█░█░█░░█░░░░█▀▀░█░█░░█░░░█░░░░█▀▀░█▀█░▀▀█░░█░░░░█▀█░█▀▀░█▀▄░█▀▀░▀░▀░▀
@@ -177,9 +177,10 @@ global AFC_hub_load_distance = vector(#global.AFC_unit_CAN_ids, {35, 5})
 global AFC_tn_retract_distance = vector(#global.AFC_unit_CAN_ids, 15)
 
 ; --- Feature Configuration ---
-global AFC_features=vector(#global.AFC_unit_CAN_ids, {true, 0})
+global AFC_features=vector(#global.AFC_unit_CAN_ids, {true, 0, 0})
 ; 0 = use dc motors (true/false)
 ; 1 = unload method (0=hubswitch, 1=lengths)
+; 2 = load method (0=Use turtleneck, 1=lengths, 2=Use preload switch)
 
 ; --- Pin Definitions (Dynamic Construction) ---
 

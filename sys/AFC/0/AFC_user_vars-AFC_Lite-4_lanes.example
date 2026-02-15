@@ -156,9 +156,10 @@ else
 ;** feature configuration
 ;** 0 = use dc motors when unloading filament (true/false)
 ;** 1 = unload method (0=hubswitch, 1=lengths)
+;** 2 = load method (0=Use turtleneck, 1=lengths, 2=Use preload switch)
 ;** The array size must not be increased
 
-;set global.AFC_features[var.unit_number] = {true, 0}
+;set global.AFC_features[var.unit_number] = {true, 0, 0}
 
 ;** These are the SLP pins for the motor. This will not need editing if using an AFC board
 ;** If you have more or less lanes, adjust this array to match. E.g. if you have 3 lanes {0,0,0}, if you have 6 lanes {0,0,0,0,0,0}
