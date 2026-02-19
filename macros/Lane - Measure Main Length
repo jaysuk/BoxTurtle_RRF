@@ -60,7 +60,7 @@ set var.total_axis = #move.axes
 ; ==========================================================================================
 
 ; --- Case A: TN Switch (Features 0 or 1) ---
-if (global.AFC_features[2] == 0 || global.AFC_features[2] == 1)
+if (global.AFC_features[var.unit_number][2] == 0 || global.AFC_features[var.unit_number][2] == 1)
     M291 P"Searching for TN Switch..." R"Step 1/3" S0 T{var.msg_time}
     M574 'f2 S1 P{global.AFC_TN_switches[var.unit_number][0]}
     M400
@@ -78,7 +78,7 @@ if (global.AFC_features[2] == 0 || global.AFC_features[2] == 1)
     M574 'f2 S1 P"nil"
 
 ; --- Case B: Extruder Switch (Feature 2) ---
-elif global.AFC_features[2] == 2
+elif global.AFC_features[var.unit_number][2] == 2
     M291 P"Searching for Extruder Switch..." R"Step 1/3" S0 T{var.msg_time}
     M574 'f2 P{global.Machine_extruder_switches[0]} S1
     M400

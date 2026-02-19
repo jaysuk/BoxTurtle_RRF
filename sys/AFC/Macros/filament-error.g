@@ -24,7 +24,7 @@ var choice_unit = 0
 ; Check AFC feature flag 0 (use DC motor on unload) to determine the tfree call parameters.
 ; 0 = use dc motors
 ; 1 = how to unload? hubswitch or lengths?
-if global.AFC_features[0]
+if global.AFC_features[var.unit_number][0]
     M98 P"0:/sys/AFC/Macros/tfree.g" A{var.tool_number} B1                                                                          ; Call tool-free macro, enabling DC assist (B1).
 else
     M98 P"0:/sys/AFC/Macros/tfree.g" A{var.tool_number} B0                                                                          ; Call tool-free macro, disabling DC assist (B0).
