@@ -232,31 +232,53 @@ var hub_switch = "SW14"
 
 var h_s_p = "^"
 
-;** This is the neopixel pin name
+;** This sets the number of neopixel ports
 
-;var neopixel_pin = "neopixel1"
+set global.AFC_neopixel_port_qty[var.unit_number] = 2
+
+;** This sets whether any of the leds strips are reversed
+;** This can be more than 1 value if there is more than one port. 
+;** Can be true or false
+;** If it is a single value make sure it is followed by a comma
+;** The array length must match the number of ports
+
+var neopixel_reverse_lane_order = {true,false}
+
+;** This is the neopixel pin name
+;** If it is a single value make sure it is followed by a comma
+;** The array length must match the number of ports
+
+var neopixel_pin = {"neopixel2","neopixel3"}
 
 ;** This is the LED code (M950 E code)
+;** If it is a single value make sure it is followed by a comma
+;** The array length must match the number of ports
 
-;var neopixel_led_number = 0
+var neopixel_led_number = {0,1}
 
 ;** This is the LED Type (M950 T code)
+;** If it is a single value make sure it is followed by a comma
+;** The array length must match the number of ports
 
-;var neopixel_type = 2
+var neopixel_type = {1,1}
 
-;** This is the Number of LEDs (M950 U code)
+;** This is the Number of LEDs per Neopixel Port (M950 U code)
+;** If it is a single value make sure it is followed by a comma
+;** The array length must match the number of ports
 
-;var neopixel_quantity = 4
+var neopixel_quantity = {12,12}
 
-set global.AFC_leds_per_lane[var.unit_number] = 6
-set global.AFC_leds_per_port[var.unit_number] = 12
-set global.AFC_leds_reverse_lane_order[var.unit_number] = {true, false} ; Assuming both ports are reversed, user can adjust.
+;** This is the Number of LEDs per Lane (M950 U code)
+;** If it is a single value make sure it is followed by a comma
+;** The array length must match the number of ports
 
-set global.AFC_neopixel[var.unit_number][0] = {"120.neopixel2","120.neopixel3"}
-set global.AFC_neopixel[var.unit_number][1] = {1,2}
-set global.AFC_neopixel[var.unit_number][2] = {1,1}
-set global.AFC_neopixel[var.unit_number][3] = {12,12}
-set global.AFC_neopixel_port_qty[var.unit_number] = 2
+var neopixel_per_lane = {6,6}
+
+;** This is the LED Brightness (0-255)
+;** If it is a single value make sure it is followed by a comma
+;** The array length must match the number of ports
+
+;var neopixel_brightness = {255,}
 
 ;** This is the output numbers for the DC motors
 ;** Used by M950. Change if you already have outputs setup
@@ -303,11 +325,25 @@ if exists(var.tn_s_p) && exists(var.turtleneck_switches[0]) && exists(var.turtle
     set global.AFC_TN_switches[var.unit_number] = {{var.tn_s_p^var.ca^"."^var.turtleneck_switches[0]},{var.tn_s_p^var.ca^"."^var.turtleneck_switches[1]}} ; These are in the order of Advance and Trailing
 if exists(var.h_s_p) && exists(var.hub_switch)
     set global.AFC_hub_switch[var.unit_number] = {var.h_s_p^var.ca^"."^var.hub_switch}
+
 if exists(var.neopixel_pin)
-    set global.AFC_neopixel[var.unit_number][0] = {var.ca^"."^var.neopixel_pin}
+    while iterations < global.AFC_neopixel_port_qty[var.unit_number]
+        set global.AFC_neopixel[var.unit_number][0][iterations] = {var.ca^"."^var.neopixel_pin[iterations]}
 if exists(var.neopixel_led_number)
-    set global.AFC_neopixel[var.unit_number][1] = var.neopixel_led_number
+    while iterations < global.AFC_neopixel_port_qty[var.unit_number]
+        set global.AFC_neopixel[var.unit_number][1][iterations] = var.neopixel_led_number[iterations]
 if exists(var.neopixel_type)
-    set global.AFC_neopixel[var.unit_number][2] = var.neopixel_type
+    while iterations < global.AFC_neopixel_port_qty[var.unit_number]
+        set global.AFC_neopixel[var.unit_number][2][iterations] = var.neopixel_type[iterations]
 if exists(var.neopixel_quantity)
-    set global.AFC_neopixel[var.unit_number][3] = var.neopixel_quantity
+    while iterations < global.AFC_neopixel_port_qty[var.unit_number]
+        set global.AFC_neopixel[var.unit_number][3][iterations] = var.neopixel_quantity[iterations]
+if exists(var.neopixel_per_lane)
+    while iterations < global.AFC_neopixel_port_qty[var.unit_number]
+        set global.AFC_neopixel[var.unit_number][4][iterations] = var.neopixel_per_lane[iterations]
+if exists(var.neopixel_reverse_lane_order)
+    while iterations < global.AFC_neopixel_port_qty[var.unit_number]
+        set global.AFC_neopixel[var.unit_number][5][iterations] = var.neopixel_reverse_lane_order[iterations]
+if exists(var.neopixel_brightness)
+    while iterations < global.AFC_neopixel_port_qty[var.unit_number]
+        set global.AFC_neopixel[var.unit_number][6][iterations] = var.neopixel_brightness[iterations]

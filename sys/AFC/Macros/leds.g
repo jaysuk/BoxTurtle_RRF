@@ -17,38 +17,51 @@
 var red=0
 var blue=0
 var green=0
-var curUnit = 0
+var unit_number = 0
 var curPort = 0
 var curLED = 0
 var totalLEDs = 0
-var curLane = 0
+var lane_number = 0
 var laneLEDStart = 0
 var laneLEDEnd = 0
+var brightness = 0
+var p_idx = 0
+var globalLEDIdx = 0
 
 while iterations < #global.AFC_unit_CAN_ids
-    set var.curUnit = iterations
+    set var.unit_number = iterations
     set var.curPort = 0
     
-    while var.curPort < global.AFC_neopixel_port_qty[var.curUnit]
+    while var.curPort < global.AFC_neopixel_port_qty[var.unit_number]
         set var.curLED = 0
-        set var.totalLEDs = global.AFC_neopixel[var.curUnit][3][var.curPort]
+        set var.totalLEDs = global.AFC_neopixel[var.unit_number][3][var.curPort]
         
         while var.curLED < var.totalLEDs
-            ; Calculate which lane this LED belongs to
-            ; System-wide LED index for this unit = (port_index * leds_per_port) + current_led_in_port
-            var globalLEDIdx = (var.curPort * global.AFC_leds_per_port[var.curUnit]) + var.curLED
-            set var.curLane = floor(var.globalLEDIdx / global.AFC_leds_per_lane[var.curUnit])
+            set var.globalLEDIdx = 0
+            set var.p_idx = 0
+            while var.p_idx < var.curPort
+                set var.globalLEDIdx = var.globalLEDIdx + global.AFC_neopixel[var.unit_number][3][var.p_idx]
+                set var.p_idx = var.p_idx + 1
+            set var.globalLEDIdx = var.globalLEDIdx + var.curLED
             
-            if global.AFC_leds_reverse_lane_order[var.curUnit][var.curPort]
-                var lanesPerPort = floor(global.AFC_leds_per_port[var.curUnit] / global.AFC_leds_per_lane[var.curUnit])
-                var localLane = floor(var.curLED / global.AFC_leds_per_lane[var.curUnit])
-                var baseLane = var.curPort * var.lanesPerPort
-                set var.curLane = var.baseLane + (var.lanesPerPort - 1) - var.localLane
+            set var.lane_number = floor(var.globalLEDIdx / global.AFC_neopixel[var.unit_number][4][var.curPort])
+            
+            if global.AFC_neopixel[var.unit_number][5][var.curPort]
+                var lanesPerPort = floor(global.AFC_neopixel[var.unit_number][3][var.curPort] / global.AFC_neopixel[var.unit_number][4][var.curPort])
+                var localLane = floor(var.curLED / global.AFC_neopixel[var.unit_number][4][var.curPort])
+                
+                var baseLane = 0
+                set var.p_idx = 0
+                while var.p_idx < var.curPort
+                    set var.baseLane = var.baseLane + floor(global.AFC_neopixel[var.unit_number][3][var.p_idx] / global.AFC_neopixel[var.unit_number][4][var.p_idx])
+                    set var.p_idx = var.p_idx + 1
+                    
+                set var.lane_number = var.baseLane + (var.lanesPerPort - 1) - var.localLane
             
             ; Ensure we don't exceed the total lanes for this unit
-            if var.curLane < global.AFC_unit_total_lanes[var.curUnit]
+            if var.lane_number < global.AFC_unit_total_lanes[var.unit_number]
                 ; --- Color Assignment based on Status Code ---
-                var statusCode = global.AFC_LED_array[var.curUnit][var.curLane]
+                var statusCode = global.AFC_LED_array[var.unit_number][var.lane_number]
                 
                 if var.statusCode == 0 ; Red (Error/Empty)
                     set var.red=255; 
@@ -87,10 +100,11 @@ while iterations < #global.AFC_unit_CAN_ids
                 set var.red=0; set var.green=0; set var.blue=0
             
             ; --- Send Color Command (M150) ---
+            set var.brightness = global.AFC_neopixel[var.unit_number][6][var.curPort]
             if var.curLED < (var.totalLEDs - 1)
-                M150 E{global.AFC_neopixel[var.curUnit][1][var.curPort]} R{var.red} U{var.green} B{var.blue} W0 F1
+                M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R{var.red} U{var.green} B{var.blue} W0 P{var.brightness} F1
             else
-                M150 E{global.AFC_neopixel[var.curUnit][1][var.curPort]} R{var.red} U{var.green} B{var.blue} W0 F0
+                M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R{var.red} U{var.green} B{var.blue} W0 P{var.brightness} F0
             
             set var.curLED = var.curLED + 1
             

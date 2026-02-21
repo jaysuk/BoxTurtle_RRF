@@ -15,6 +15,9 @@ var curLED = 0
 var totalLEDs = 0
 var test_phase = 0
 var num_phases = 7 ; R, G, B, W, Y, M, C
+var brightness = 0
+var p_idx = 0
+var globalLEDIdx = 0
 
 ; --- User Input: Select Unit ---
 if #global.M291_data[0] != 1
@@ -24,7 +27,7 @@ else
     set var.unit_number = 0
 
 ; --- User Input: Select Test Mode ---
-M291 P"Select Test Mode" K{"Cycle Colors (Selected)","Cycle Colors (All)","Sequence Lanes (One-by-One)"} S4 J1
+M291 P"Select Test Mode" K{"Cycle Colors (Selected)","Cycle Colors (All)","Sequence Lanes (One-by-One)","Sequence Colors per Lane"} S4 J1
 set var.test_mode = input
 
 if var.test_mode == 0 ; Selected Lane Cycle
@@ -69,30 +72,42 @@ if var.test_mode == 0 || var.test_mode == 1
             set var.blue=255
 
         set var.curPort = 0
-        while var.curPort < #global.AFC_neopixel[var.unit_number][0]
+        while var.curPort < global.AFC_neopixel_port_qty[var.unit_number]
             set var.curLED = 0
             set var.totalLEDs = global.AFC_neopixel[var.unit_number][3][var.curPort]
             while var.curLED < var.totalLEDs
-                ; Calculate Lane
-                var globalIdx = (var.curPort * global.AFC_leds_per_port[var.unit_number]) + var.curLED
-                var targetLane = floor(var.globalIdx / global.AFC_leds_per_lane[var.unit_number])
+                set var.globalLEDIdx = 0
+                set var.p_idx = 0
+                while var.p_idx < var.curPort
+                    set var.globalLEDIdx = var.globalLEDIdx + global.AFC_neopixel[var.unit_number][3][var.p_idx]
+                    set var.p_idx = var.p_idx + 1
+                set var.globalLEDIdx = var.globalLEDIdx + var.curLED
                 
-                if global.AFC_leds_reverse_lane_order[var.unit_number][var.curPort]
-                    if mod(var.targetLane, 2) == 0
-                        set var.targetLane = var.targetLane + 1
-                    else
-                        set var.targetLane = var.targetLane - 1
-
+                var targetLane = floor(var.globalLEDIdx / global.AFC_neopixel[var.unit_number][4][var.curPort])
+                
+                if global.AFC_neopixel[var.unit_number][5][var.curPort]
+                    var lanesPerPort = floor(global.AFC_neopixel[var.unit_number][3][var.curPort] / global.AFC_neopixel[var.unit_number][4][var.curPort])
+                    var localLane = floor(var.curLED / global.AFC_neopixel[var.unit_number][4][var.curPort])
+                    
+                    var baseLane = 0
+                    set var.p_idx = 0
+                    while var.p_idx < var.curPort
+                        set var.baseLane = var.baseLane + floor(global.AFC_neopixel[var.unit_number][3][var.p_idx] / global.AFC_neopixel[var.unit_number][4][var.p_idx])
+                        set var.p_idx = var.p_idx + 1
+                        
+                    set var.targetLane = var.baseLane + (var.lanesPerPort - 1) - var.localLane
+                    
+                set var.brightness = global.AFC_neopixel[var.unit_number][6][var.curPort]
                 if var.test_mode == 1 || var.targetLane == var.lane_number
                     if var.curLED < (var.totalLEDs - 1)
-                        M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R{var.red} U{var.green} B{var.blue} F1
+                        M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R{var.red} U{var.green} B{var.blue} P{var.brightness} F1
                     else
-                        M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R{var.red} U{var.green} B{var.blue} F0
+                        M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R{var.red} U{var.green} B{var.blue} P{var.brightness} F0
                 else
                     if var.curLED < (var.totalLEDs - 1)
-                        M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R0 U0 B0 F1
+                        M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R0 U0 B0 P{var.brightness} F1
                     else
-                        M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R0 U0 B0 F0
+                        M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R0 U0 B0 P{var.brightness} F0
                 set var.curLED = var.curLED + 1
             set var.curPort = var.curPort + 1
         
@@ -106,33 +121,129 @@ if var.test_mode == 2
     var current_lane_test = 0
     while var.current_lane_test < global.AFC_unit_total_lanes[var.unit_number]
         set var.curPort = 0
-        while var.curPort < #global.AFC_neopixel[var.unit_number][0]
+        while var.curPort < global.AFC_neopixel_port_qty[var.unit_number]
             set var.curLED = 0
             set var.totalLEDs = global.AFC_neopixel[var.unit_number][3][var.curPort]
             while var.curLED < var.totalLEDs
-                var globalIdx = (var.curPort * global.AFC_leds_per_port[var.unit_number]) + var.curLED
-                var targetLane = floor(var.globalIdx / global.AFC_leds_per_lane[var.unit_number])
+                set var.globalLEDIdx = 0
+                set var.p_idx = 0
+                while var.p_idx < var.curPort
+                    set var.globalLEDIdx = var.globalLEDIdx + global.AFC_neopixel[var.unit_number][3][var.p_idx]
+                    set var.p_idx = var.p_idx + 1
+                set var.globalLEDIdx = var.globalLEDIdx + var.curLED
                 
-                if global.AFC_leds_reverse_lane_order[var.unit_number][var.curPort]
-                    if mod(var.targetLane, 2) == 0
-                        set var.targetLane = var.targetLane + 1
-                    else
-                        set var.targetLane = var.targetLane - 1
-
+                var targetLane = floor(var.globalLEDIdx / global.AFC_neopixel[var.unit_number][4][var.curPort])
+                
+                if global.AFC_neopixel[var.unit_number][5][var.curPort]
+                    var lanesPerPort = floor(global.AFC_neopixel[var.unit_number][3][var.curPort] / global.AFC_neopixel[var.unit_number][4][var.curPort])
+                    var localLane = floor(var.curLED / global.AFC_neopixel[var.unit_number][4][var.curPort])
+                    
+                    var baseLane = 0
+                    set var.p_idx = 0
+                    while var.p_idx < var.curPort
+                        set var.baseLane = var.baseLane + floor(global.AFC_neopixel[var.unit_number][3][var.p_idx] / global.AFC_neopixel[var.unit_number][4][var.p_idx])
+                        set var.p_idx = var.p_idx + 1
+                        
+                    set var.targetLane = var.baseLane + (var.lanesPerPort - 1) - var.localLane
+                    
+                set var.brightness = global.AFC_neopixel[var.unit_number][6][var.curPort]
                 if var.targetLane == var.current_lane_test
                     if var.curLED < (var.totalLEDs - 1)
-                        M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R255 U255 B255 F1 ; White
+                        M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R255 U255 B255 P{var.brightness} F1 ; White
                     else
-                        M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R255 U255 B255 F0
+                        M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R255 U255 B255 P{var.brightness} F0
                 else
                     if var.curLED < (var.totalLEDs - 1)
-                        M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R0 U0 B0 F1
+                        M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R0 U0 B0 P{var.brightness} F1
                     else
-                        M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R0 U0 B0 F0
+                        M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R0 U0 B0 P{var.brightness} F0
                 set var.curLED = var.curLED + 1
             set var.curPort = var.curPort + 1
         
         G4 S1
+        set var.current_lane_test = var.current_lane_test + 1
+
+; ==========================================================================================
+; Mode 3: Sequence Colors per Lane
+; ==========================================================================================
+if var.test_mode == 3
+    var current_lane_test = 0
+    while var.current_lane_test < global.AFC_unit_total_lanes[var.unit_number]
+        set var.test_phase = 0
+        while var.test_phase < var.num_phases
+            ; --- Determine Color ---
+            if var.test_phase == 0 ; RED (0)
+                set var.red=255; 
+                set var.green=0; 
+                set var.blue=0
+            elif var.test_phase == 1 ; GREEN (1)
+                set var.red=0; 
+                set var.green=255; 
+                set var.blue=0
+            elif var.test_phase == 2 ; BLUE (2)
+                set var.red=0; 
+                set var.green=0; 
+                set var.blue=255
+            elif var.test_phase == 3 ; WHITE (3)
+                set var.red=255; 
+                set var.green=255; 
+                set var.blue=255
+            elif var.test_phase == 4 ; YELLOW (4)
+                set var.red=255; 
+                set var.green=128; 
+                set var.blue=0
+            elif var.test_phase == 5 ; MAGENTA (5)
+                set var.red=255; 
+                set var.green=0; 
+                set var.blue=128
+            elif var.test_phase == 6 ; CYAN (6)
+                set var.red=0; 
+                set var.green=255; 
+                set var.blue=255
+
+            set var.curPort = 0
+            while var.curPort < global.AFC_neopixel_port_qty[var.unit_number]
+                set var.curLED = 0
+                set var.totalLEDs = global.AFC_neopixel[var.unit_number][3][var.curPort]
+                while var.curLED < var.totalLEDs
+                    set var.globalLEDIdx = 0
+                    set var.p_idx = 0
+                    while var.p_idx < var.curPort
+                        set var.globalLEDIdx = var.globalLEDIdx + global.AFC_neopixel[var.unit_number][3][var.p_idx]
+                        set var.p_idx = var.p_idx + 1
+                    set var.globalLEDIdx = var.globalLEDIdx + var.curLED
+                    
+                    var targetLane = floor(var.globalLEDIdx / global.AFC_neopixel[var.unit_number][4][var.curPort])
+                    
+                    if global.AFC_neopixel[var.unit_number][5][var.curPort]
+                        var lanesPerPort = floor(global.AFC_neopixel[var.unit_number][3][var.curPort] / global.AFC_neopixel[var.unit_number][4][var.curPort])
+                        var localLane = floor(var.curLED / global.AFC_neopixel[var.unit_number][4][var.curPort])
+                        
+                        var baseLane = 0
+                        set var.p_idx = 0
+                        while var.p_idx < var.curPort
+                            set var.baseLane = var.baseLane + floor(global.AFC_neopixel[var.unit_number][3][var.p_idx] / global.AFC_neopixel[var.unit_number][4][var.p_idx])
+                            set var.p_idx = var.p_idx + 1
+                            
+                        set var.targetLane = var.baseLane + (var.lanesPerPort - 1) - var.localLane
+                        
+                    set var.brightness = global.AFC_neopixel[var.unit_number][6][var.curPort]
+                    if var.targetLane == var.current_lane_test
+                        if var.curLED < (var.totalLEDs - 1)
+                            M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R{var.red} U{var.green} B{var.blue} P{var.brightness} F1
+                        else
+                            M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R{var.red} U{var.green} B{var.blue} P{var.brightness} F0
+                    else
+                        if var.curLED < (var.totalLEDs - 1)
+                            M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R0 U0 B0 P{var.brightness} F1
+                        else
+                            M150 E{global.AFC_neopixel[var.unit_number][1][var.curPort]} R0 U0 B0 P{var.brightness} F0
+                    set var.curLED = var.curLED + 1
+                set var.curPort = var.curPort + 1
+            
+            G4 S1
+            set var.test_phase = var.test_phase + 1
+            
         set var.current_lane_test = var.current_lane_test + 1
 
 ; --- Restore State ---

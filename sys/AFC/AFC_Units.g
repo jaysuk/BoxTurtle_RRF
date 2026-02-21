@@ -258,28 +258,30 @@ while iterations < #global.AFC_unit_CAN_ids
     set var.hsp = "^"
     set global.AFC_hub_switch[var.curUnit] = var.hsp ^ global.AFC_unit_CAN_ids[var.curUnit] ^ "." ^ global.AFC_hub_switch[var.curUnit] ^ var.hub_start_number
 
-global AFC_leds_per_lane = vector(#global.AFC_unit_CAN_ids, 1)
-global AFC_leds_per_port = vector(#global.AFC_unit_CAN_ids, 4)
 global AFC_neopixel_port_qty = vector(#global.AFC_unit_CAN_ids, 1)
-global AFC_leds_reverse_lane_order = vector(#global.AFC_unit_CAN_ids, 0)
 
 ; 0 = neopixel pin string
 ; 1 = LED strip number (logical index)
 ; 2 = LED Type
 ; 3 = No. of LEDs in the strip
+; 4 = No. of LEDs per lane
+; 5 = Reverse LEDs (true or false)
+; 6 = LED Brightness (0-255)
 global AFC_neopixel = vector(#global.AFC_unit_CAN_ids, 0)
 
 var neopixel_start_number = 0
 while iterations < #global.AFC_unit_CAN_ids
     set var.curUnit = iterations
-    set global.AFC_neopixel[var.curUnit] = vector(4, 0)
+    set global.AFC_neopixel[var.curUnit] = vector(7, 0)
     set global.AFC_neopixel[var.curUnit][0] = vector(global.AFC_neopixel_port_qty[var.curUnit], "")
     set global.AFC_neopixel[var.curUnit][1] = vector(global.AFC_neopixel_port_qty[var.curUnit], 0)
     set global.AFC_neopixel[var.curUnit][2] = vector(global.AFC_neopixel_port_qty[var.curUnit], 2) ; Type 2 default
-    set global.AFC_neopixel[var.curUnit][3] = vector(global.AFC_neopixel_port_qty[var.curUnit], global.AFC_leds_per_port[var.curUnit])
-    
+    set global.AFC_neopixel[var.curUnit][3] = vector(global.AFC_neopixel_port_qty[var.curUnit], 4)
+    set global.AFC_neopixel[var.curUnit][4] = vector(global.AFC_neopixel_port_qty[var.curUnit], 1)
+    set global.AFC_neopixel[var.curUnit][5] = vector(global.AFC_neopixel_port_qty[var.curUnit], false)
+    set global.AFC_neopixel[var.curUnit][6] = vector(global.AFC_neopixel_port_qty[var.curUnit], 255)
+
     var port_idx = 0
-    set global.AFC_leds_reverse_lane_order[var.curUnit] = vector(global.AFC_neopixel_port_qty[var.curUnit], false)
     while var.port_idx < global.AFC_neopixel_port_qty[var.curUnit]
         set global.AFC_neopixel[var.curUnit][0][var.port_idx] = global.AFC_unit_CAN_ids[var.curUnit] ^ ".neopixel" ^ (var.port_idx + 1)
         set global.AFC_neopixel[var.curUnit][1][var.port_idx] = var.neopixel_start_number
