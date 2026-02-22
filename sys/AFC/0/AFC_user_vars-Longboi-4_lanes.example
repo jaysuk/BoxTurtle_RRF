@@ -327,23 +327,30 @@ if exists(var.h_s_p) && exists(var.hub_switch)
     set global.AFC_hub_switch[var.unit_number] = {var.h_s_p^var.ca^"."^var.hub_switch}
 
 if exists(var.neopixel_pin)
+    set global.AFC_neopixel[var.unit_number][0] = vector(global.AFC_neopixel_port_qty[var.unit_number], "")
     while iterations < global.AFC_neopixel_port_qty[var.unit_number]
         set global.AFC_neopixel[var.unit_number][0][iterations] = {var.ca^"."^var.neopixel_pin[iterations]}
 if exists(var.neopixel_led_number)
+    set global.AFC_neopixel[var.unit_number][1] = vector(global.AFC_neopixel_port_qty[var.unit_number], 0)
     while iterations < global.AFC_neopixel_port_qty[var.unit_number]
         set global.AFC_neopixel[var.unit_number][1][iterations] = var.neopixel_led_number[iterations]
 if exists(var.neopixel_type)
+    set global.AFC_neopixel[var.unit_number][2] = vector(global.AFC_neopixel_port_qty[var.unit_number], 0)
     while iterations < global.AFC_neopixel_port_qty[var.unit_number]
         set global.AFC_neopixel[var.unit_number][2][iterations] = var.neopixel_type[iterations]
 if exists(var.neopixel_quantity)
+    set global.AFC_neopixel[var.unit_number][3] = vector(global.AFC_neopixel_port_qty[var.unit_number], 0)
     while iterations < global.AFC_neopixel_port_qty[var.unit_number]
         set global.AFC_neopixel[var.unit_number][3][iterations] = var.neopixel_quantity[iterations]
 if exists(var.neopixel_per_lane)
+    set global.AFC_neopixel[var.unit_number][4] = vector(global.AFC_neopixel_port_qty[var.unit_number], 0)
     while iterations < global.AFC_neopixel_port_qty[var.unit_number]
         set global.AFC_neopixel[var.unit_number][4][iterations] = var.neopixel_per_lane[iterations]
 if exists(var.neopixel_reverse_lane_order)
+    set global.AFC_neopixel[var.unit_number][5] = vector(global.AFC_neopixel_port_qty[var.unit_number], false)
     while iterations < global.AFC_neopixel_port_qty[var.unit_number]
         set global.AFC_neopixel[var.unit_number][5][iterations] = var.neopixel_reverse_lane_order[iterations]
 if exists(var.neopixel_brightness)
+    set global.AFC_neopixel[var.unit_number][6] = vector(global.AFC_neopixel_port_qty[var.unit_number], 0)
     while iterations < global.AFC_neopixel_port_qty[var.unit_number]
         set global.AFC_neopixel[var.unit_number][6][iterations] = var.neopixel_brightness[iterations]
