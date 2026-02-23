@@ -6,7 +6,7 @@
 ; and number of lanes per unit as this file is included as part of the release
 ; and the settings will get overridden!!!!
 
-if fileexists(0:/sys/AFC/AFC_Unit_Count.g)
+if fileexists("0:/sys/AFC/AFC_Unit_Count.g")
     M98 P"0:/sys/AFC/AFC_Unit_Count.g"
 else
     ; Array to store CAN addresses for up to 8 BoxTurtles. 
