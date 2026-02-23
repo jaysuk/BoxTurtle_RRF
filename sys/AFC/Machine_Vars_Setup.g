@@ -3,6 +3,13 @@
 ;░█░█░█▀█░█░░░█▀█░░█░░█░█░█▀▀░░░▀▀█░█▀▀░░█░░░█░░░█░░█░█░█░█░▀▀█
 ;░▀░▀░▀░▀░▀▀▀░▀░▀░▀▀▀░▀░▀░▀▀▀░░░▀▀▀░▀▀▀░░▀░░░▀░░▀▀▀░▀░▀░▀▀▀░▀▀▀
 
+;░█▀▄░█▀█░░░█▀█░█▀█░▀█▀░░░█▀▀░█▀▄░▀█▀░▀█▀░░░█▀█░█▀█░█▀▀░▀█▀░░░█░█░█▀▀░█▀▄░█▀▀░█░█░█
+;░█░█░█░█░░░█░█░█░█░░█░░░░█▀▀░█░█░░█░░░█░░░░█▀▀░█▀█░▀▀█░░█░░░░█▀█░█▀▀░█▀▄░█▀▀░▀░▀░▀
+;░▀▀░░▀▀▀░░░▀░▀░▀▀▀░░▀░░░░▀▀▀░▀▀░░▀▀▀░░▀░░░░▀░░░▀░▀░▀▀▀░░▀░░░░▀░▀░▀▀▀░▀░▀░▀▀▀░▀░▀░▀
+
+; Please use Machine_user_vars.g instead to override any of these settings 
+; as this file is included as part of each release and your settings will be overridden!!!!
+
 ; This sets the general machine travel speeds for things like parking etc
 ; X and Y are the first value, Z is the second value.
 ; Both values are in mm/s

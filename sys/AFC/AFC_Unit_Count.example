@@ -1,0 +1,9 @@
+; Array to store CAN addresses for up to 8 BoxTurtles. 
+; 0 = Not Installed. 
+; Example: Unit 1 is at CAN 119.
+; If the array only has a single value it must be followed by a comma
+global AFC_unit_CAN_ids = {119,}
+
+; Array defining the number of lanes available on each specific BoxTurtle unit.
+; If the array only has a single value it must be followed by a comma
+global AFC_unit_total_lanes = {4,}

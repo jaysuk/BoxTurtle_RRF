@@ -1,14 +1,24 @@
-; Array to store CAN addresses for up to 8 BoxTurtles. 
-; 0 = Not Installed. 
-; Example: Unit 1 is at CAN 119.
-global AFC_unit_CAN_ids = {119,120,121}
-
-; Array defining the number of lanes available on each specific BoxTurtle unit.
-global AFC_unit_total_lanes = {4,4,2}
-
 ;░█▀▄░█▀█░░░█▀█░█▀█░▀█▀░░░█▀▀░█▀▄░▀█▀░▀█▀░░░█▀█░█▀█░█▀▀░▀█▀░░░█░█░█▀▀░█▀▄░█▀▀░█░█░█
 ;░█░█░█░█░░░█░█░█░█░░█░░░░█▀▀░█░█░░█░░░█░░░░█▀▀░█▀█░▀▀█░░█░░░░█▀█░█▀▀░█▀▄░█▀▀░▀░▀░▀
 ;░▀▀░░▀▀▀░░░▀░▀░▀▀▀░░▀░░░░▀▀▀░▀▀░░▀▀▀░░▀░░░░▀░░░▀░▀░▀▀▀░░▀░░░░▀░▀░▀▀▀░▀░▀░▀▀▀░▀░▀░▀
+
+; Please rename AFC_Unit_Count.example to AFC_Unit_Count.g to set the CAN address
+; and number of lanes per unit as this file is included as part of the release
+; and the settings will get overridden!!!!
+
+if fileexists(0:/sys/AFC/AFC_Unit_Count.g)
+    M98 P"0:/sys/AFC/AFC_Unit_Count.g"
+else
+    ; Array to store CAN addresses for up to 8 BoxTurtles. 
+    ; 0 = Not Installed. 
+    ; Example: Unit 1 is at CAN 119.
+    global AFC_unit_CAN_ids = {119,}
+
+    ; Array defining the number of lanes available on each specific BoxTurtle unit.
+    global AFC_unit_total_lanes = {4,}
+
+; Please use AFC_user_vars.g instead to override any of these settings 
+; as this file is included as part of each release and your settings will be overridden!!!!
 
 ; --- Helper Variables for Iteration ---
 ; These variables are used as counters and temporary storage during the setup loops.

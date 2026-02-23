@@ -10,8 +10,8 @@ var count = 0
 ; --- Configuration Loading ---
 if !exists(global.AFC_settings_loaded)                                                                          ; Checks if the primary AFC settings have been loaded into global variables.
     M98 P"0:/sys/AFC/Macros/gather_machine_info.g"
-    M98 P"0:/sys/AFC/AFC_units.g"                                                                               ; Load Unit Definitions
-    M98 P"0:/sys/AFC/Machine_vars.g"                                                                            ; Load Machine Settings
+    M98 P"0:/sys/AFC/AFC_Units_Setup.g"                                                                         ; Load Unit Definitions
+    M98 P"0:/sys/AFC/Machine_Vars_Setup.g"                                                                      ; Load Machine Settings
     global AFC_settings_loaded = true                                                                           ; Set a flag to prevent re-execution of the default settings file on subsequent runs.
 
 ; --- User Overrides (Unit Specific) ---
@@ -19,7 +19,7 @@ while iterations < #global.AFC_unit_CAN_ids
     set var.curUnit = iterations
     set var.file_address = "0:/sys/AFC/"^var.curUnit^"/AFC_user_vars.g"
     if fileexists(var.file_address)                                                                             ; Checks for the existence of an optional user override file.
-        M98 P{var.file_address} A{var.curUnit}                                                                   ; Load per-unit user overrides
+        M98 P{var.file_address} A{var.curUnit}                                                                  ; Load per-unit user overrides
 
 ; --- User Overrides (Machine Specific) ---
 if fileexists("0:/sys/AFC/Machine/Machine_user_vars.g")                                                         ; Checks for the existence of an optional user override file.
