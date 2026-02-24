@@ -20,7 +20,7 @@ G1 'f{(global.AFC_lanes[var.unit_number][var.lane_number][2])} F{global.AFC_load
 M400                                                                                                                   ; Wait for the previous move (filament push) to completely finish.
 ; This next move is to prime the turtleneck
 G91                                                                                                            ; Wait for the homing move to finish.
-G1  'f{global.AFC_tn_retract_distance[var.unit_number][0]} F{global.AFC_load_retract_speed[var.unit_number][0] * 60}                                                                                                            ; Wait for the homing move to finish.
+G1  'f{global.AFC_tn_retract_distance[var.unit_number]} F{global.AFC_load_retract_speed[var.unit_number][0] * 60}                                                                                                            ; Wait for the homing move to finish.
 G90
 ; --- Extruder Setup ---
 ; M98: Macro call.

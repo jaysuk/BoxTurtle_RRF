@@ -182,7 +182,7 @@ while iterations < #global.AFC_unit_CAN_ids
     set var.unloadInputStartNumber = var.unloadInputStartNumber + 1
 
 ; --- Distance Configuration ---
-global AFC_hub_retract_distance = vector(#global.AFC_unit_CAN_ids, 25)
+global AFC_hub_retract_distance = vector(#global.AFC_unit_CAN_ids, 35)
 global AFC_hub_load_distance = vector(#global.AFC_unit_CAN_ids, {35, 5})
 global AFC_tn_retract_distance = vector(#global.AFC_unit_CAN_ids, 15)
 
@@ -362,3 +362,7 @@ while iterations < #global.AFC_unit_CAN_ids
         set var.curLane = var.curLane + 1
     ; Append "All" to the end of the vector
     set global.M291_data[2][var.curUnit][global.AFC_unit_total_lanes[var.curUnit]] = "All"
+
+global AFC_time = 0
+
+global AFC_debug = false
