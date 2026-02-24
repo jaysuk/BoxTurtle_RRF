@@ -15,8 +15,11 @@ M574 'f2 P{global.Machine_extruder_switches[0]} S1                              
 M400                                                                                                            ; Wait for the M574 command to be fully processed.
 ; G1 H4: Homing move for the specified axis. Stops immediately upon endstop trigger.
 G1 H4 'f{global.AFC_max_min_axes[var.unit_number][1]} F{global.AFC_load_retract_speed[var.unit_number][0] * 60} ; Drives the filament forward (20000mm arbitrary max distance) until the pre-extruder sensor is triggered, confirming the filament is staged. Speed is in mm/min.
-M400                                                                                                            ; Wait for the homing move to finish.
-
+M400
+; This next move is to prime the turtleneck
+G91                                                                                                            ; Wait for the homing move to finish.
+G1  'f{global.AFC_tn_retract_distance[var.unit_number][0]} F{global.AFC_load_retract_speed[var.unit_number][0] * 60}                                                                                                            ; Wait for the homing move to finish.
+G90
 ; --- Endstop Cleanup and Tool Activation ---
 M574 'f2 P"nil" S1                                                                                              ; De-assign the physical pin (P"nil") from the 'F' axis endstop, freeing the pin.
 G4 P500                                                                                                         ; Pause for 500 milliseconds.

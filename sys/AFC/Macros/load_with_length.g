@@ -18,7 +18,10 @@ var total_axis = param.B                                                        
 ; We access the Total Length at index [2] of the AFC_lanes array for this specific unit and lane.
 G1 'f{(global.AFC_lanes[var.unit_number][var.lane_number][2])} F{global.AFC_load_retract_speed[var.unit_number][0]*60} ; Feeds filament forward by total stored length.
 M400                                                                                                                   ; Wait for the previous move (filament push) to completely finish.
-
+; This next move is to prime the turtleneck
+G91                                                                                                            ; Wait for the homing move to finish.
+G1  'f{global.AFC_tn_retract_distance[var.unit_number][0]} F{global.AFC_load_retract_speed[var.unit_number][0] * 60}                                                                                                            ; Wait for the homing move to finish.
+G90
 ; --- Extruder Setup ---
 ; M98: Macro call.
 M98 P"0:/sys/AFC/Macros/extruder_setup.g" A{var.tool_number} B1                                                         ; Executes a macro to configure the main extruder drives (E-axes) for the current lane. The B1 parameter likely indicates the mode (e.g., enable mixing/select drive).
