@@ -1,0 +1,110 @@
+; ==========================================================================================
+; Spool - Assign to Lane
+; Assigns a physical spool from the SD card to a specific lane and loads it into memory.
+; ==========================================================================================
+
+var unit_number = 0
+var lane_number = 0
+var spool_id = 0
+
+; 1. Check for parameters A and B
+if exists(param.A) && exists(param.B)
+    set var.unit_number = param.A
+    set var.lane_number = param.B
+else
+    ; 1b. Select Unit
+    if #global.M291_data[0] != 1
+        M291 P"Select the Unit" K{global.M291_data[0]} S4 J1
+        if input == -1
+            abort
+        set var.unit_number = input
+    else
+        set var.unit_number = 0
+
+    ; 2b. Select Lane
+    M291 P"Select the lane to assign a spool to" K{global.M291_data[1][var.unit_number]} S4 J1
+    if input == -1
+        abort
+    set var.lane_number = input
+
+; Check if the lane is actually loaded with filament
+if !global.AFC_lanes[var.unit_number][var.lane_number][0]
+    M291 P{"Unit " ^ var.unit_number ^ " Lane " ^ var.lane_number ^ " is empty. You must load filament into the lane before assigning a spool."} R"Lane Empty" S2
+    abort
+; Scan SD card to list all created spool files
+var spool_list = ""
+var spool_count = 0
+while iterations < 100
+    if fileexists("0:/spools/" ^ iterations ^ ".g")
+        if var.spool_count > 0
+            set var.spool_list = var.spool_list ^ ", "
+        set var.spool_list = var.spool_list ^ iterations
+        set var.spool_count = var.spool_count + 1
+
+if var.spool_count == 0
+    M291 P"No spool files found. Please create one with 'Spool - Create' first." R"No Spools" S1 T3
+    abort
+
+M291 P{"Enter Spool ID for this lane. Current Spools: " ^ var.spool_list} R"Assign Spool" S5 J1
+if input == -1
+    abort
+set var.spool_id = input
+
+; Check if this spool ID is already assigned to another lane
+var check_u = 0
+var check_l = 0
+
+while var.check_u < #global.AFC_unit_CAN_ids
+    set var.check_l = 0
+    while var.check_l < global.AFC_unit_total_lanes[var.check_u]
+        if global.spoolman[var.check_u][var.check_l][0] == var.spool_id
+            M291 P{"Spool " ^ var.spool_id ^ " is already assigned to Unit " ^ var.check_u ^ " Lane " ^ var.check_l ^ ". Please unassign it first or select a different Spool ID."} R"Duplicate Spool" S2
+            abort
+        set var.check_l = var.check_l + 1
+    set var.check_u = var.check_u + 1
+
+; 4. Check if spool file exists
+var spool_file = "0:/spools/" ^ var.spool_id ^ ".g"
+if !fileexists(var.spool_file)
+    M291 P{"Spool " ^ var.spool_id ^ " does not exist. Please run 'Spool - Create' first."} R"Error" S2
+    abort
+
+; 5. Load the spool data into temporary RAM (spool_load_temp)
+M98 P{var.spool_file}
+
+; 6. Copy temp data into the active data slot for this lane
+; Data schema: {SpoolID, FilamentType, Color, Manufacturer, InitialLength, RemainingLength, DateFirstUsed, DateLastUsed, HexColor}
+set global.spool_active_data[var.unit_number][var.lane_number][0] = global.spool_load_temp[0]
+set global.spool_active_data[var.unit_number][var.lane_number][1] = global.spool_load_temp[1]
+set global.spool_active_data[var.unit_number][var.lane_number][2] = global.spool_load_temp[2]
+set global.spool_active_data[var.unit_number][var.lane_number][3] = global.spool_load_temp[3]
+set global.spool_active_data[var.unit_number][var.lane_number][4] = global.spool_load_temp[4]
+set global.spool_active_data[var.unit_number][var.lane_number][5] = global.spool_load_temp[5]
+set global.spool_active_data[var.unit_number][var.lane_number][6] = global.spool_load_temp[6]
+set global.spool_active_data[var.unit_number][var.lane_number][7] = global.spool_load_temp[7] 
+set global.spool_active_data[var.unit_number][var.lane_number][8] = global.spool_load_temp[8] 
+set global.spool_active_data[var.unit_number][var.lane_number][9] = global.spool_load_temp[9] 
+set global.spool_active_data[var.unit_number][var.lane_number][10] = global.spool_load_temp[10] 
+set global.spool_active_data[var.unit_number][var.lane_number][11] = global.spool_load_temp[11] 
+
+; 6.5 Date Stamp check - if the spool has never been used, stamp the assignment date
+if global.spool_active_data[var.unit_number][var.lane_number][6] == "" && state.time != null
+    set global.spool_active_data[var.unit_number][var.lane_number][6] = state.time
+
+; 7. Sync standard AFC properties
+;set global.AFC_lanes[var.unit_number][var.lane_number][4] = {global.spool_active_data[var.unit_number][var.lane_number][1], global.spool_active_data[var.unit_number][var.lane_number][2]}
+
+; 8. Set Spoolman Integration Stub (kept for backwards config compatibility)
+set global.spoolman[var.unit_number][var.lane_number] = {var.spool_id, global.spoolman[var.unit_number][var.lane_number][1]}
+
+; 9. Clear the temporary load variable
+set global.spool_load_temp = {-1, "", "", "", 0.0, 0.0, "", "", "", 0.0, 0.0, 1.24}
+
+M98 P"0:/sys/AFC/Macros/save_status.g"
+
+; 10. Show Success Message
+var display_len = floor(global.spool_active_data[var.unit_number][var.lane_number][5] / 100) / 10
+var type = global.spool_active_data[var.unit_number][var.lane_number][1]
+var color = global.spool_active_data[var.unit_number][var.lane_number][2]
+
+M291 P{"Spool " ^ var.spool_id ^ " (" ^ var.type ^ " " ^ var.color ^ ", " ^ var.display_len ^ "m remaining) assigned to Unit " ^ var.unit_number ^ " Lane " ^ var.lane_number} R"Success" S1 T4

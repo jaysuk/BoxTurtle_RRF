@@ -1,0 +1,93 @@
+; ==========================================================================================
+; Spool - Create
+; Prompts the user to define a new spool and writes it to the SD card.
+; ==========================================================================================
+
+var new_id = 0
+var type = ""
+var color = ""
+var manuf = ""
+var initial_length = 0
+
+; Scan SD card to list all created spool files
+var spool_list = ""
+var spool_count = 0
+while iterations < 100
+    if fileexists("0:/spools/" ^ iterations ^ ".g")
+        if var.spool_count > 0
+            set var.spool_list = var.spool_list ^ ", "
+        set var.spool_list = var.spool_list ^ iterations
+        set var.spool_count = var.spool_count + 1
+
+if var.spool_count == 0
+    set var.spool_list = "None"
+
+; 1. Enter Spool ID
+M291 P{"Enter a unique ID for the new spool. Existing Spools: " ^ var.spool_list} R"Create Spool" S5 J1
+if input == -1
+    abort
+set var.new_id = input
+
+if fileexists("0:/spools/" ^ var.new_id ^ ".g")
+    M291 P{"Spool ID " ^ var.new_id ^ " already exists! Aborting."} R"Error" S2
+    abort
+    
+; 2. Enter Filament Type
+M291 P"Enter the Filament Type (e.g. PLA, PETG, ABS):" R"Create Spool" S7
+if input == null
+    abort
+set var.type = input
+
+; 3. Enter Color
+M291 P"Enter the Filament Color (e.g. Red, Black, Silk Blue):" R"Create Spool" S7
+if input == null
+    abort
+set var.color = input
+
+; 4. Enter Manufacturer
+M291 P"Enter the Manufacturer (e.g. Bambu Lab, eSUN):" R"Create Spool" S7
+if input == null
+    abort
+set var.manuf = input
+
+; 5. Enter Hex Color
+M291 P"Enter the Hex Color code (e.g. #FF0000) or leave blank:" R"Create Spool" S7
+if input == null
+    abort
+var hex_color = input
+
+; 6. Enter Length
+M291 P"Enter the entire length of the spool in mm (1kg PLA is ~330000mm):" R"Create Spool" S5 J1
+if input == -1
+    abort
+set var.initial_length = input
+
+; 7. Enter Density
+M291 P"Enter the material density in g/cm3 (PLA: 1.24):" R"Create Spool" S5 J1
+if input == -1
+    abort
+var density = input
+
+; 6. (Directory must already exist at 0:/spools)
+
+; 7. Write the file
+; Use strict 3-quote escaping for strings 
+var string_type = """" ^ var.type ^ """"
+var string_color = """" ^ var.color ^ """"
+var string_manuf = """" ^ var.manuf ^ """"
+var string_hex = """" ^ var.hex_color ^ """"
+
+var json_part1 = "; {""id"": " ^ var.new_id ^ ", ""type"": " ^ var.string_type ^ ", ""color"": " ^ var.string_color
+var json_part2 = ", ""manuf"": " ^ var.string_manuf ^ ", ""initial"": " ^ var.initial_length
+var json_part3 = ", ""remaining"": " ^ var.initial_length ^ ", ""first"": """""", ""last"": """""", ""hex"": " ^ var.string_hex ^ ", ""price"": 0.0, ""empty"": 200.0, ""density"": " ^ var.density ^ "}"
+var json_payload = var.json_part1 ^ var.json_part2 ^ var.json_part3
+echo >{"0:/spools/" ^ var.new_id ^ ".g"} var.json_payload
+
+; Since it's new, remaining equals initial, and we leave dates blank
+var p_part1 = "{" ^ var.new_id ^ ", " ^ var.string_type ^ ", " ^ var.string_color ^ ", " ^ var.string_manuf 
+var p_part2 = ", " ^ var.initial_length ^ ", " ^ var.initial_length ^ ", """", """", " ^ var.string_hex ^ ", 0.0, 200.0, " ^ var.density ^ "}"
+var payload = var.p_part1 ^ var.p_part2
+
+echo >>{"0:/spools/" ^ var.new_id ^ ".g"} "set global.spool_load_temp = " ^ var.payload
+
+M291 P{"Spool " ^ var.new_id ^ " created successfully! You can now assign it to a lane."} R"Success" S1 T3

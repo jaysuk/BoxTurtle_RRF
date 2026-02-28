@@ -23,7 +23,7 @@ var ymax = move.axes[global.Machine_axis_number[1]].max                         
 var x_current = move.axes[global.Machine_axis_number[0]].current                                                                                               ; Capture current X motor current for restoration later.
 var y_current = move.axes[global.Machine_axis_number[1]].current                                                                                               ; Capture current Y motor current for restoration later.
 var z_current = move.axes[global.Machine_axis_number[2]].current                                                                                               ; Capture current Z motor current for restoration later.
-var previous_pa = move.extruders[tools[global.Machine_tool_number].extruders[0]].pressureAdvance                                                                                ; Capture current Pressure Advance (PA) value for restoration later.
+var previous_pa = move.extruders[tools[state.currentTool].extruders[0]].pressureAdvance                                                                                ; Capture current Pressure Advance (PA) value for restoration later.
 
 M98 P"0:/sys/AFC/Macros/debug.g" A"AFC_Cut: Cut Filament"                                                                                 ; Log start of cut macro.
 

@@ -1,0 +1,39 @@
+; ==========================================================================================
+; Spool - Report
+; Displays the currently loaded spool data for every lane in a selected unit.
+; ==========================================================================================
+var unit_number = 0
+var lane_info = ""
+
+if #global.M291_data[0] != 1
+    M291 P"Select the Unit" K{global.M291_data[0]} S4 J1
+    if input == -1
+        abort
+    set var.unit_number = input
+else
+    set var.unit_number = 0
+
+; 1. Create a temporary array to hold the text strings
+var report_list = global.M291_data[1][var.unit_number]
+
+; 2. Populate the array based on Active Data
+while iterations < global.AFC_unit_total_lanes[var.unit_number]
+    var spool_id = global.spool_active_data[var.unit_number][iterations][0]
+    
+    if var.spool_id == -1
+        set var.lane_info = var.report_list[iterations] ^ ": [EMPTY]"
+    else
+        var type = global.spool_active_data[var.unit_number][iterations][1]
+        var color = global.spool_active_data[var.unit_number][iterations][2]
+        var remaining_mm = global.spool_active_data[var.unit_number][iterations][5]
+        
+        ; Format the remaining length into meters (e.g. 150.5m)
+        var remaining_m = floor(var.remaining_mm / 100) / 10
+        
+        set var.lane_info = var.report_list[iterations] ^ ": Spool " ^ var.spool_id ^ " - " ^ var.type ^ " " ^ var.color ^ " (" ^ var.remaining_m ^ "m remaining)"
+
+    ; Store it in the list
+    set var.report_list[iterations] = var.lane_info
+
+; 3. Display the List
+M291 P{"Unit " ^ var.unit_number ^ " Currently Loaded Spools"} K{var.report_list} S4 F0

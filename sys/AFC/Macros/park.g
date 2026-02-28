@@ -1,3 +1,5 @@
+; param.A - If 1 its called from tpost and its 0 when called from tfree
+
 ; === AFC Toolhead Park Macro (RepRapFirmware G-Code) ===
 ; Purpose: Safely moves the toolhead to a specified park position (X/Y) at a calculated safe Z height.
 
@@ -9,6 +11,10 @@ var travel_speed_xy = global.Machine_travel_speed[0] * 60
 var travel_speed_z = global.Machine_travel_speed[1] * 60
 
 M98 P"0:/sys/AFC/Macros/debug.g" A"AFC_Park: Park Toolhead"                      ; Log the start of the park routine.
+
+if param.A = 1
+    if global.Machine_brush[15] && fileexists("0:/sys/AFC/Macros/brush_safe_deploy.g")
+        M98 P"0:/sys/AFC/Macros/brush_safe_deploy.g"
 
 ; --- Homing Safety Check ---
 ; Ensures the coordinate system is valid before attempting absolute moves.

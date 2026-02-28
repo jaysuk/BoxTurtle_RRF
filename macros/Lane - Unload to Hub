@@ -1,0 +1,115 @@
+; ==========================================================================================
+; Lane - Unload to Hub
+; Retracts the selected lane's filament back off the hub switch by hub_retract_distance,
+; leaving the filament ready in the lane. This is NOT a full unload — the lane remains
+; marked as loaded. Use this to clear the hub without removing filament from the lane.
+; ==========================================================================================
+
+; --- Variable Initialisation ---
+var lane_number = 0
+var tool_number = 0
+var unit_number = 0
+var total_axis = 0
+var msg_time = 3
+
+; --- 1. Warning ---
+M291 P"WARNING: Only use this macro if the filament has NOT reached the extruder. If filament is loaded into the hotend, use the normal unload macro instead." R"Warning" S3
+
+; --- 2. Determine Lane ---
+if exists(param.A)
+    if param.A < 0 || param.A >= global.AFC_unit_total_available_lanes
+        M118 S{"Invalid tool number: " ^ param.A}
+        abort
+    set var.tool_number = param.A
+    set var.unit_number = global.Tool_to_AFC[var.tool_number][0]
+    set var.lane_number = global.Tool_to_AFC[var.tool_number][1]
+else
+    if #global.M291_data[0] != 1
+        M291 P"Select the Unit" K{global.M291_data[0]} S4 J1
+        if input == -1
+            abort
+        set var.unit_number = input
+    else
+        set var.unit_number = 0
+
+    M291 P"Select the lane to unload to hub" K{global.M291_data[1][var.unit_number]} S4 J1
+    if input == -1
+        abort
+    set var.lane_number = input
+    set var.tool_number = global.AFC_lane_to_tool[var.unit_number][var.lane_number]
+
+; --- 3. Pre-Flight Checks ---
+; Check software state
+if !global.AFC_lanes[var.unit_number][var.lane_number][0]
+    M291 P{"Unit " ^ var.unit_number ^ ": Lane " ^ var.lane_number ^ " is not marked as loaded. Nothing to do."} R"Warning" S2
+    abort
+
+; Check hub switch physically — abort if hub is already clear
+M950 J{global.AFC_hub_input_numbers[var.unit_number]} C{global.AFC_hub_switch[var.unit_number]}
+M400
+if sensors.gpIn[global.AFC_hub_input_numbers[var.unit_number]].value == 0
+    M950 J{global.AFC_hub_input_numbers[var.unit_number]} C"nil"
+    M291 P{"Unit " ^ var.unit_number ^ ": Hub is already clear — no filament detected at hub switch."} R"Nothing to do" S2
+    abort
+M950 J{global.AFC_hub_input_numbers[var.unit_number]} C"nil"
+M400
+
+M291 P{"Unloading Unit " ^ var.unit_number ^ ": Lane " ^ var.lane_number ^ " to hub..."} R"Busy" S0 T{var.msg_time}
+
+; --- 3. Setup ---
+; Disable Longboi triggers while we move so they don't interfere
+if global.AFC_mainboard[var.unit_number] == 1
+    var curLane = 0
+    while var.curLane < global.AFC_unit_total_lanes[var.unit_number]
+        M581 P{global.AFC_trigger_input_numbers[var.unit_number][var.curLane]} R-1 T{global.AFC_trigger_numbers[var.unit_number][var.curLane]}
+        M950 J{global.AFC_trigger_input_numbers[var.unit_number][var.curLane]} C"nil"
+        set var.curLane = var.curLane + 1
+
+M98 P"0:/sys/AFC/Macros/axis_setup.g" A{var.tool_number}          ; Set up the lane motor as the f axis
+M584 P{#move.axes}                                                 ; Unhide axes
+set var.total_axis = #move.axes
+
+; --- 4. Enable DC Motor (Reverse) if configured ---
+if global.AFC_features[var.unit_number][0]
+    M98 P"0:/sys/AFC/Macros/dc_motors.g" A"R" B{var.tool_number}
+    M400
+
+; --- 5. Retract to Hub Switch (home backwards until hub switch opens) ---
+; Set the hub switch as a max endstop so we can probe back off it
+M574 'f2 S1 P{"!" ^ global.AFC_hub_switch[var.unit_number]}        ; Inverted hub switch: triggers when hub OPENS (filament clears it)
+
+; Set a safe starting position greater than the retract distance
+G92 'f{global.AFC_lanes[var.unit_number][var.lane_number][2] + 50}
+
+; Retract until the hub switch opens (filament has cleared the hub)
+G1 H4 'f0 F{global.AFC_load_retract_speed[var.unit_number][1]*60}
+M400
+
+G92 'f{global.AFC_hub_retract_distance[var.unit_number]}
+G1 'f0 F{global.AFC_load_retract_speed[var.unit_number][1]*60}
+M400
+
+; --- 6. Turn off DC Motor ---
+if global.AFC_features[var.unit_number][0]
+    M98 P"0:/sys/AFC/Macros/dc_motors.g" A"O" B{var.tool_number}
+    M400
+
+; --- 7. Cleanup ---
+M574 'f2 S1 P"nil"                                                 ; Release hub switch endstop
+M584 P{var.total_axis-1}                                           ; Hide temporary axis
+M400
+
+; Re-enable Longboi triggers
+if global.AFC_mainboard[var.unit_number] == 1
+    var curLane2 = 0
+    while var.curLane2 < global.AFC_unit_total_lanes[var.unit_number]
+        M950 J{global.AFC_trigger_input_numbers[var.unit_number][var.curLane2]} C{global.AFC_prep_switch[var.unit_number][var.curLane2]}
+        M581 P{global.AFC_trigger_input_numbers[var.unit_number][var.curLane2]} R2 T{global.AFC_trigger_numbers[var.unit_number][var.curLane2]} S1
+        set var.curLane2 = var.curLane2 + 1
+
+; --- 8. Update LED to show ready/loaded state (Green) ---
+set global.AFC_LED_array[var.unit_number][var.lane_number] = 1
+M98 P"0:/sys/AFC/Macros/leds.g"
+M98 P"0:/sys/AFC/Macros/save_status.g"
+
+M291 P{"Unit " ^ var.unit_number ^ ": Lane " ^ var.lane_number ^ " retracted to hub. Lane remains loaded."} R"Done" S1 T{var.msg_time}

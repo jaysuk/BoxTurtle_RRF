@@ -36,6 +36,9 @@ if global.AFC_lanes[var.unit_number][var.lane_number][0]
     ; Update Global Variable
     set global.AFC_lanes[var.unit_number][var.lane_number][0] = false
     
+    ; Automatically Unassign any Spool linked to this lane
+    M98 P"0:/macros/Spool - Unassign" A{var.unit_number} B{var.lane_number}
+    
     ; Update LEDs (Set to Red/Empty)
     set global.AFC_LED_array[var.unit_number][var.lane_number] = 0
     M98 P"0:/sys/AFC/Macros/leds.g"

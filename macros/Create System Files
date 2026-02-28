@@ -136,5 +136,6 @@ if var.choice == 0 || var.choice == 7
         M291 P{"The old toolchange files have been renamed"} R"Success" S1 T{var.msg_time}
 
 if var.choice == 0
-        M291 P{"All files required have been created in the sys folder"} R"Success" S1 T{var.msg_time}
-
+    ; Create the spools directory for filament inventory tracking
+    M47 "0:/spools"
+    M291 P{"All files required have been created in the sys folder"} R"Success" S1 T{var.msg_time}

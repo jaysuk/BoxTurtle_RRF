@@ -8,13 +8,13 @@ var prime_speed = global.AFC_load_retract_speed[0][2] * 60
 ; --- Z-Axis Positioning Check ---
 ; global.Machine_brush[8] is likely a boolean flag: True if the brush mechanism is deployed by servo/motor.
 ; global.Machine_brush[2] is the target Z height for the brush operation.
-if global.Machine_brush[8] && global.Machine_brush[2] > 0
+if global.Machine_brush[8] && global.Machine_brush[2] > 0 && !global.Machine_brush[15]
     G1 Z{global.Machine_brush[2]} F{var.z_travel_speed}          ; Move Z to the brushing height at the calculated Z speed (mm/min).
 
 M400                                                             ; Wait for the Z movement to complete before proceeding to the deployment/extrusion.
 
 ; --- Brush Deployment (Servo/Motor Control) ---
-if global.Machine_brush[8]                                       ; Check if the brush mechanism is enabled (e.g., using a servo).
+if global.Machine_brush[8] && !global.Machine_brush[15]          ; Check if the brush mechanism is enabled (e.g., using a servo).
                                                                  ; Used Machine_brush[12] for Servo Index and [9] for Pin
     M950 S{global.Machine_brush[12]} C{global.Machine_brush[9]}  ; Define the logical servo using the configured index and pin.
                                                                  ; [Used Machine_brush[12] for Servo Index and [10] for Deployed Angle

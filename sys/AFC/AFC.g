@@ -38,6 +38,14 @@ M98 P"0:/sys/AFC/Macros/calculate_tools.g"
 if fileexists("0:/sys/AFC/Status/status.g")
     M98 P"0:/sys/AFC/Status/status.g"
 
+; --- Spool Tracking Restoration ---
+; Restores Spool IDs to specific lanes
+if fileexists("0:/sys/AFC/Status/spool_status.g")
+    M98 P"0:/sys/AFC/Status/spool_status.g"
+    
+; Restores active spool files into RAM for assigned lanes
+M98 P"0:/sys/AFC/Macros/spool_read_all.g"
+
 ; --- LED Configuration ---
 ; Configures the Neopixel strips for each unit.
 while iterations < #global.AFC_unit_CAN_ids

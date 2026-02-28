@@ -41,7 +41,7 @@ M98 P"0:/sys/AFC/Macros/debug.g" A"Machine_brush: Move to Brush."             ; 
 
 ; Check Z-Height Safety and Move Z
 ; Check if Z minimum height is required (global.Machine_brush[13]) AND if the target Z is higher than the current Z.
-if global.Machine_brush[14] && (global.Machine_brush[2] > move.axes[global.Machine_axis_number[2]].machinePosition)
+if global.Machine_brush[14] && (global.Machine_brush[2] > var.currentz)
     G1 Z{global.Machine_brush[2]} F{var.z_travel_speed}                       ; Move Z axis up to the required Z position before horizontal travel.
 
 ; Deploy the brush mechanism
@@ -84,3 +84,5 @@ elif global.Machine_brush[8]                                                  ; 
     M280 P{global.Machine_brush[12]} S{global.Machine_brush[11]}              ; Move the servo (P[12]) to the retracted angle (S[11]).
     G4 P500                                                                   ; Pause for 500ms to allow the servo to move.
     M950 S{global.Machine_brush[12]} C"nil"                                   ; De-assign the servo pin to free the hardware resource.
+if global.Machine_brush[15] && fileexists("0:/sys/AFC/Macros/brush_safe_retract.g")
+    M98 P"0:/sys/AFC/Macros/brush_safe_retract.g" 

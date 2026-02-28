@@ -1,0 +1,60 @@
+; ==========================================================================================
+; Spool - Inventory
+; Scans the SD card for all created spool files (0 to 99) and prints their complete details
+; to the console using M118.
+; ==========================================================================================
+
+M118 S"================ SPOOL INVENTORY ================"
+
+var spool_count = 0
+
+; Iterate through all possible IDs 0-99
+while iterations < 100
+    var spool_file = "0:/spools/" ^ iterations ^ ".g"
+    
+    if fileexists(var.spool_file)
+        ; Execute the file to populate the temporary variables
+        M98 P{var.spool_file}
+        
+        ; Extract the data
+        var id = global.spool_load_temp[0]
+        var type = global.spool_load_temp[1]
+        var color = global.spool_load_temp[2]
+        var manufacturer = global.spool_load_temp[3]
+        
+        ; Convert absolute mm lengths to meters for readability (1 decimal place)
+        var remaining_m = floor(global.spool_load_temp[5] / 100) / 10
+        var initial_m = floor(global.spool_load_temp[4] / 100) / 10
+        
+        var date_first = global.spool_load_temp[6]
+        var date_last = global.spool_load_temp[7]
+        var hex_color = global.spool_load_temp[8]
+        
+        ; Format strings for empty variables so the output looks clean
+        if var.hex_color == ""
+            set var.hex_color = "N/A"
+        if var.date_first == ""
+            set var.date_first = "N/A"
+        if var.date_last == ""
+            set var.date_last = "N/A"
+            
+        ; Output to console
+        M118 S{"=> Spool ID " ^ var.id ^ ": " ^ var.manufacturer ^ " " ^ var.type ^ " " ^ var.color}
+        M118 S{"      Remaining: " ^ var.remaining_m ^ "m / " ^ var.initial_m ^ "m | Hex: " ^ var.hex_color}
+        M118 S{"      First Used: " ^ var.date_first ^ " | Last Used: " ^ var.date_last}
+        M118 S"------------------------------------------------"
+        
+        set var.spool_count = var.spool_count + 1
+
+; Clear the temporary load variable so no ghost data is left behind
+set global.spool_load_temp = {-1, "", "", "", 0.0, 0.0, "", "", "", 0.0, 0.0, 1.24}
+
+if var.spool_count == 0
+    M118 S"No spool files found on the SD card."
+else
+    M118 S{"Total Spools Tracked: " ^ var.spool_count}
+
+M118 S"================================================"
+
+; Show a small green toast so the Web UI user knows to check the console
+M291 P"Spool Inventory has been output to the Console!" R"Inventory Complete" S1 T4

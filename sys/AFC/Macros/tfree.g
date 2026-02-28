@@ -47,6 +47,35 @@ if (state.nextTool == -1 && tools[{var.tool_number}].active[0] <= 175)
 ; --- Spoolman Support ---
 if global.Machine_features[7] == 1                                                                                           ; Check if Spoolman feature is enabled (Index 8 in Machine_features)
     set global.spoolman[var.unit_number][var.lane_number][1] = false                                                         ; Disable extrusion tracking for this lane
+    
+    ; Calculate amount extruded since this tool was loaded (in tpost)
+    var extIdx = tools[var.tool_number].filamentExtruder
+    if var.extIdx != -1
+        var baseline = global.spool_extrusion_baseline[var.tool_number]
+        var current = move.extruders[var.extIdx].position
+        var extruded_mm = var.current - var.baseline
+        
+        if global.spool_active_data[var.unit_number][var.lane_number][0] != -1
+            
+            if var.extruded_mm > 0
+                ; Ensure First Used Date is populated if this is the very first time it's extruded
+                if global.spool_active_data[var.unit_number][var.lane_number][6] == "" && state.time != null
+                    set global.spool_active_data[var.unit_number][var.lane_number][6] = state.time
+                    
+                ; Always update Last Used Date whenever filament is actively consumed
+                if state.time != null
+                    set global.spool_active_data[var.unit_number][var.lane_number][7] = state.time
+                    
+                ; Deduct the final remaining chunk from the spool length (index 5)
+                set global.spool_active_data[var.unit_number][var.lane_number][5] = global.spool_active_data[var.unit_number][var.lane_number][5] - var.extruded_mm
+            
+            ; Instantly persist the new length back to the spool's .g file on the SD card
+            ; We do this ALWAYS on unload because daemon.g might have left buffered unsaved extrusion
+            M98 P"0:/sys/AFC/Macros/spool_write.g" U{var.unit_number} L{var.lane_number}
+            
+        ; Reset baseline and unsaved tracker
+        set global.spool_extrusion_baseline[var.tool_number] = 0.0
+        set global.spool_unsaved_extrusion[var.tool_number] = 0.0
 
 ; --- Homing Check ---
 if !move.axes[global.Machine_axis_number[0]].homed || !move.axes[global.Machine_axis_number[1]].homed || !move.axes[global.Machine_axis_number[0]].homed                                                         ; Verify all axes are homed
@@ -60,7 +89,7 @@ if !exists(param.C)                                                             
     if global.Machine_features[1]                                                                                            ; Check if Cut feature is enabled (Index 1)
         M98 P"0:/sys/AFC/Macros/cut.g"                                                                                              ; Execute filament cutting macro
     if global.Machine_features[3]                                                                                            ; Check if Park feature is enabled (Index 3)
-        M98 P"0:/sys/AFC/Macros/park.g"                                                                                             ; Execute toolhead parking macro
+        M98 P"0:/sys/AFC/Macros/park.g" A0                                                                                             ; Execute toolhead parking macro
 
 var total_axis = #move.axes                                                                                                  ; Capture total axis count for cleanup later
 if global.Machine_features[1]                                                                                                ; Check if Cut feature is enabled (Index 1)
@@ -77,12 +106,11 @@ else
     set var.DC_motor=0                                                                                                       ; Default DC motor to off
 
 ; --- Buffer Management (Disarm Sensors) ---
-if !exists(param.C)                                                                                                          ; If not ignoring moves
-    M581 P{global.AFC_buffer_input_numbers[var.unit_number][0]} R-1 T{global.AFC_buffer_trigger_numbers[var.unit_number][0]} ; Disable 'Advance' buffer trigger for this unit
-    M581 P{global.AFC_buffer_input_numbers[var.unit_number][1]} R-1 T{global.AFC_buffer_trigger_numbers[var.unit_number][1]} ; Disable 'Trail' buffer trigger for this unit
-    M400                                                                                                                     ; Wait for command execution
-    M950 J{global.AFC_buffer_input_numbers[var.unit_number][0]} C"nil"                                                       ; Unmap 'Advance' buffer pin
-    M950 J{global.AFC_buffer_input_numbers[var.unit_number][1]} C"nil"                                                       ; Unmap 'Trail' buffer pin
+M581 P{global.AFC_buffer_input_numbers[var.unit_number][0]} R-1 T{global.AFC_buffer_trigger_numbers[var.unit_number][0]} ; Disable 'Advance' buffer trigger for this unit
+M581 P{global.AFC_buffer_input_numbers[var.unit_number][1]} R-1 T{global.AFC_buffer_trigger_numbers[var.unit_number][1]} ; Disable 'Trail' buffer trigger for this unit
+M400                                                                                                                     ; Wait for command execution
+M950 J{global.AFC_buffer_input_numbers[var.unit_number][0]} C"nil"                                                       ; Unmap 'Advance' buffer pin
+M950 J{global.AFC_buffer_input_numbers[var.unit_number][1]} C"nil"                                                       ; Unmap 'Trail' buffer pin
 
 ; --- LED Status Update ---
 set global.AFC_LED_array[var.unit_number][var.lane_number]=2                                                                 ; Set lane LED to Blue (Busy/Active)
@@ -152,4 +180,4 @@ set var.time_minutes=floor(var.time/60)                                         
 set var.time_seconds=var.time-(var.time_minutes*60)                                                                          ; Calculate remaining seconds
 
 if !exists(param.C)                                                                                                          ; If output is not suppressed
-    M118 S"The tool unload time was "^var.time^" seconds ("^var.time_minutes^" minutes and "^var.time_seconds^" seconds)"
+    M118 S{"The tool unload time was "^var.time^" seconds ("^var.time_minutes^" minutes and "^var.time_seconds^" seconds)"}

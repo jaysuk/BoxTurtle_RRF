@@ -251,7 +251,9 @@ global Machine_kick = {-1,-1,5,1.5,150,0,"right",45,10} ; was AFC_kick
 ; 12 - Servo number (for M950)
 ; 13 - brush clean acceleration
 ; 14 - True - Z needs to be above a certain height for brush deployment. False - No minimum z height required
-global Machine_brush = {-1,-1,-1,150,30,10,true,4,false,"0.PE6",110,20,10,0,false} ; was AFC_brush
+; 15 - Safe brush - True or false - The head needs to be away from a certain position to allow the brush to be deployed
+; Position that the head needs to be in to allow the brush to deploy - X(16), Y(17), Z(18)
+global Machine_brush = {-1,-1,-1,150,30,10,true,4,false,"0.PE6",110,20,10,0,false,false,-1,-1,-1} ; was AFC_brush
 
 ;░█▀█░█▀█░█▀▄░█░█░░░█▀▀░█▀▀░▀█▀░▀█▀░▀█▀░█▀█░█▀▀░█▀▀
 ;░█▀▀░█▀█░█▀▄░█▀▄░░░▀▀█░█▀▀░░█░░░█░░░█░░█░█░█░█░▀▀█
@@ -307,6 +309,15 @@ global Machine_tip_skinnydip = {30,30,70,0,0} ; was AFC_tip_skinnydip
 ;░█░█░█░█░░░█░█░█░█░░█░░░░█▀▀░█░█░░█░░░█░░░░█▀▀░█▀█░▀▀█░░█░░░░█▀█░█▀▀░█▀▄░█▀▀░▀░▀░▀
 ;░▀▀░░▀▀▀░░░▀░▀░▀▀▀░░▀░░░░▀▀▀░▀▀░░▀▀▀░░▀░░░░▀░░░▀░▀░▀▀▀░░▀░░░░▀░▀░▀▀▀░▀░▀░▀▀▀░▀░▀░▀
 
+; These are the machine features
+; 0 = brushing
+; 1 = cutting 
+; 2 = kicking
+; 3 = parking
+; 4 = pooping
+; 5 = purging
+; 6 = start check
+; 7 = spoolman support
 global Machine_features={var.brush,var.cut,var.kick,var.park,var.poop,var.purge,var.start,var.spoolman} ;
 
 ; ########## Additional Info ##########

@@ -29,7 +29,7 @@ var lane_number = global.Tool_to_AFC[var.tool_number][1]                        
 ; If param.B is NOT present, or if it is NOT 1, proceed with heating.
 if !exists(param.B) || param.B != 1
     if global.AFC_extruder_temp[var.unit_number][var.lane_number] != 0                                                                     ; Check if a specific temp is defined for this lane.
-        M568 P{var.tool_number} S{global.AFC_extruder_temp[var.lane_number]} R{global.AFC_extruder_temp[var.unit_number][var.lane_number]} ; Set Active (S) and Standby (R) temps.
+        M568 P{var.tool_number} S{global.AFC_extruder_temp[var.unit_number][var.lane_number]} R{global.AFC_extruder_temp[var.unit_number][var.lane_number]} ; Set Active (S) and Standby (R) temps.
     else
         M568 P{var.tool_number} S220 R220                                                                                                  ; Default to 220C if no specific temp is set.
     M116 P{var.tool_number}                                                                                                                ; Wait for the heater to reach the set temperature.
@@ -62,13 +62,13 @@ M581 P{global.AFC_buffer_input_numbers[var.unit_number][0]} R1 T{global.AFC_buff
 M581 P{global.AFC_buffer_input_numbers[var.unit_number][1]} R1 T{global.AFC_buffer_trigger_numbers[var.unit_number][1]} S1                 ; Trigger on Rising Edge (R1) for Trail switch.
 
 ; Enable Filament Monitor
-M591 P1 D1 C{global.AFC_load_switch[var.unit_number][var.lane_number]} S1                                                                  ; Enable filament monitor on Drive 1 using the lane's specific load switch.
+M591 P1 D{tools[var.tool_number].extruders[1]} C{global.AFC_load_switch[var.unit_number][var.lane_number]} S1                                                                  ; Enable filament monitor on Drive 1 using the lane's specific load switch.
 
 M400
 
 ; --- Final Cleaning and Parking ---
 if global.Machine_features[3]                                                                                                              ; Check if "Park" feature is enabled.
-    M98 P"0:/sys/AFC/Macros/park.g"
+    M98 P"0:/sys/AFC/Macros/park.g" A1
 
 if global.Machine_features[5]                                                                                                              ; Check if "Purge" feature is enabled.
     M98 P"0:/sys/AFC/Macros/purge.g"
@@ -84,13 +84,21 @@ set var.time=var.tpost_time-var.tpre_time                                       
 set var.time_minutes=floor(var.time/60)                                                                                                    ; Calculate minutes.
 set var.time_seconds=var.time-(var.time_minutes*60)                                                                                        ; Calculate seconds.
 
-M118 S"The tool load time was "^var.time^" seconds ("^var.time_minutes^" minutes and "^var.time_seconds^" seconds)"
+M118 S{"The tool load time was "^var.time^" seconds ("^var.time_minutes^" minutes and "^var.time_seconds^" seconds)"}
 
 ; --- Spoolman Integration ---
 if global.Machine_features[7] == 1                                                                                                         ; Check if Spoolman feature is enabled (Index 8).
-                                                                                                                                           ; [NOTE: Assuming Spoolman structure is updated to [Unit][Lane]]
     set global.spoolman[var.unit_number][var.lane_number][1] = true                                                                        ; Enable extrusion tracking for this lane.
+    
+    ; Snapshot the extruder's position value so we can calculate differences
+    var extIdx = tools[var.tool_number].filamentExtruder
+    if var.extIdx != -1
+        set global.spool_extrusion_baseline[var.tool_number] = move.extruders[var.extIdx].position
+        set global.spool_unsaved_extrusion[var.tool_number] = 0.0
+
     G92 E0                                                                                                                                 ; Reset extruder position.
+
+M98 P"0:/sys/AFC/Macros/save_status.g"
 
 ; --- Restore Position ---
 ; G1 R2: Move to the position stored in Restore Point 2 (usually saved at the start of the tool change).

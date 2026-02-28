@@ -63,6 +63,7 @@ if global.AFC_lanes[var.unit_number][var.lane_number][0] == true                
         M400                                                                                              ; This just makes sure the above command runs
     if sensors.endstops[{global.Machine_om_axis_number}].triggered                                    ; This checks to make sure the filament has been unloaded
         set global.AFC_lanes[var.unit_number][var.lane_number][0] = false                             ; This marks the lane as having no filament loaded
+        M98 P"0:/macros/Spool - Unassign" A{var.unit_number} B{var.lane_number}                       ; Automatically unassign the spool since the lane is empty
         M400                                                                                          ; This just makes sure the above command runs
         set global.AFC_LED_array[var.unit_number][var.lane_number] = 0                                ; This sets the neopixel colour for this lane to 0
         set global.AFC_lanes[var.unit_number][var.lane_number][4][0] = "None"
@@ -88,6 +89,7 @@ if global.AFC_lanes[var.unit_number][var.lane_number][0] == true                
                 M400                                                                                      ; This just makes sure the above command runs
             if sensors.endstops[{global.Machine_om_axis_number}].triggered                            ; This checks to make sure the filament has been unloaded
                 set global.AFC_lanes[var.unit_number][var.lane_number][0] = false                  ; This marks the lane as having no filament loaded
+                M98 P"0:/macros/Spool - Unassign" A{var.unit_number} B{var.lane_number}            ; Automatically unassign the spool since the lane is empty
                 M400                                                                                  ; This just makes sure the above command runs
                 set global.AFC_LED_array[var.unit_number][var.lane_number] = 0                        ; This sets the neopixel colour for this lane to 0
                 set global.AFC_lanes[var.unit_number][var.lane_number][4][0] = "None"
@@ -99,10 +101,11 @@ if global.AFC_lanes[var.unit_number][var.lane_number][0] == true                
         M118 S{"Unit " ^ var.unit_number ^ " Lane "^var.lane_number^" has not been successfully unloaded. Please recheck your measurements"}
     else
         M118 S{"Unit " ^ var.unit_number ^ " Lane "^var.lane_number^" has been successfully unloaded"}
-    M574 'f1 P"nil" S1                                                                                ; This frees up the load switch from being used as a GPIO input
-    M584 P{var.total_axis-1}                                                                          ; This hides the axis used for movement
 else
     M118 S{"No Filament Loaded in Unit " ^ var.unit_number ^ " Lane "^var.lane_number^" to Unload"} ; If no filament is recorded as being loaded in the lane, this message will display
+
+M574 'f1 P"nil" S1                                                                                ; This frees up the load switch from being used as a GPIO input
+M584 P{var.total_axis-1}                                                                          ; This hides the axis used for movement
 
 if global.AFC_mainboard[var.unit_number] == 1
     while iterations < global.AFC_unit_total_lanes[var.unit_number]

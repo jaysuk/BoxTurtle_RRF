@@ -120,6 +120,7 @@ if var.extruder == 1
     M203 E{var.speed}
     M201 E{var.accel}
     M83
+    M567 P{var.tool_number} E1:0                                                       ; Set mixing ratio to 1:0 (Main extruder moves, AFC motor stays still)
 
 if var.extruder == 0                                                                  ; Logic to UNMAP (Soft Disable) the AFC motor
     M567 P{var.tool_number} E1:0                                                       ; Set mixing ratio to 1:0 (Main extruder moves, AFC motor stays still)

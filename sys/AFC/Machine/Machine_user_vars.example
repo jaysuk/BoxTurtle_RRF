@@ -286,6 +286,12 @@ set global.Machine_brush[12] = 10
 set global.Machine_brush[13] = 0
 ;** True - Z needs to be above a certain height for brush deployment. False - No minimum z height required
 set global.Machine_brush[14] = false
+;** True - The printhead needs to be in a certain position or away from a certain position for the brush to be safely deployed. False - it doesn't
+set global.Machine_brush[15] = false
+;** Position to move the head to so its in a safe position away from where the brush needs to deploy
+set global.Machine_brush[16] = -1 ; X
+set global.Machine_brush[17] = -1 ; Y
+set global.Machine_brush[18] = -1 ; Z
 
 ;**░█▀█░█▀█░█▀▄░█░█░░░█▀▀░█▀▀░▀█▀░▀█▀░▀█▀░█▀█░█▀▀░█▀▀
 ;**░█▀▀░█▀█░█▀▄░█▀▄░░░▀▀█░█▀▀░░█░░░█░░░█░░█░█░█░█░▀▀█

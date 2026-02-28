@@ -325,7 +325,23 @@ while iterations < #global.AFC_unit_CAN_ids
 ; Stores Spoolman IDs for integration per lane.
 global spoolman = vector(#global.AFC_unit_CAN_ids, "Unit ")
 while iterations < #global.AFC_unit_CAN_ids
-    set global.spoolman[iterations] = vector(global.AFC_unit_total_lanes[iterations], {0, false})
+    set global.spoolman[iterations] = vector(global.AFC_unit_total_lanes[iterations], {-1, false})
+
+; Temporary holding variable for reading spool files from SD
+if !exists(global.spool_load_temp)
+    global spool_load_temp = {-1, "", "", "", 0.0, 0.0, "", "", "", 0.0, 0.0, 1.24}
+
+; Active Spool Data (only populated for lanes with a loaded spool)
+; Data schema: {SpoolID, FilamentType, Color, Manufacturer, InitialLength, RemainingLength, DateFirstUsed, DateLastUsed, HexColor, Price, EmptyWeight, Density}
+global spool_active_data = vector(#global.AFC_unit_CAN_ids, 0)
+while iterations < #global.AFC_unit_CAN_ids
+    set global.spool_active_data[iterations] = vector(global.AFC_unit_total_lanes[iterations], {-1, "", "", "", 0.0, 0.0, "", "", "", 0.0, 0.0, 1.24})
+
+; Baseline extrusion length snapshotted when a tool is loaded
+global spool_extrusion_baseline = vector(#tools, 0.0)
+
+; Accumulated un-saved extrusion length for daemon.g to trigger periodic SD writes
+global spool_unsaved_extrusion = vector(#tools, 0.0)
 
 ; ########## Button Lists (Merged into M291_data) ##########
 
@@ -366,3 +382,5 @@ while iterations < #global.AFC_unit_CAN_ids
 global AFC_time = 0
 
 global AFC_debug = false
+
+global AFC_current_tool = -1

@@ -193,6 +193,7 @@ while iterations <  #global.AFC_unit_CAN_ids
                                                                                                                             ; Mark as Unloaded.
                         M291 P{"Unit " ^ var.curUnit ^ ": Lane " ^ iterations ^ " was empty. Updating status."} R"Correction" S1 T{var.msg_time}
                         M98 P"0:/macros/Lane - Mark Unloaded" A{var.tool_to_load}                                                    ; If the filament failed to reach the hub switch, it's considered unloaded, so run cleanup macro.
+                        M98 P"0:/macros/Spool - Unassign" A{var.curUnit} B{var.curLane}                                              ; Automatically clear the spool data for this empty lane
                     
                                                                                                                             ; Cleanup
                     M18 'f                                                                                                     ; Disable (idle) the motor associated with the temporary 'F' axis.
