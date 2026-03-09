@@ -19,6 +19,7 @@
 ; --- Parameter Validation ---
 if !exists(param.A)                                                                                           ; Check if the required 'A' parameter (tool number) was passed to the macro.
     M118 S"Missing the Tool number"                                                                            ; Report the error.
+    M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/triggers.g" S1
     abort                                                                                                     ; Stop macro execution if the parameter is missing.
 
 var tool_number = param.A                                                                                       ; Assign the input parameter to a local variable for easier use.
@@ -29,8 +30,7 @@ var lane_number = global.Tool_to_AFC[var.tool_number][1]
 ; Call a sub-macro to configure the motor associated with the current lane as a temporary axis (likely 'F').
 M98 P"0:/sys/AFC/Macros/axis_setup.g" A{var.tool_number}
 
-var total_axis=#move.axes                                                                                     ; Store the total number of axes (used later to hide the temporary axis).
-
+M584 P{#move.axes} 
 if global.AFC_mainboard[var.unit_number] == 1
     while iterations < global.AFC_unit_total_lanes[var.unit_number]
         M581 P{global.AFC_trigger_input_numbers[var.unit_number][iterations]} R-1 T{global.AFC_trigger_numbers[var.unit_number][iterations]}
@@ -41,7 +41,8 @@ if global.AFC_mainboard[var.unit_number] == 1
 M574 'f1 P{global.AFC_load_switch[var.unit_number][var.lane_number]} S1                                                        ; Assign the physical pin (P) for the filament load switch of the current lane to the 'F' axis, using active-low/normal switch mode (S1).
 G92 'f0                                                                                                       ; Set the current position of the temporary 'F' axis to 0.
 if !sensors.endstops[{global.Machine_om_axis_number}].triggered                                                       ; Check if the filament is already triggering the endstop. OM = Other Motor/Temporary Axis.
-    G28 'f                                                                                                    ; If not triggered, perform a homing move (G28) on the 'F' axis (motor feeds filament) until the switch is hit.
+    G1 H1 'f500 F2100
+    G92 'f0                                                                                                   ; If not triggered, perform a homing move (G28) on the 'F' axis (motor feeds filament) until the switch is hit.
     if sensors.endstops[{global.Machine_om_axis_number}].triggered                                                    ; Check if the homing move successfully found the filament (switch triggered).
                                                                                                               ; --- Filament Detected: Update Status ---
         set global.AFC_lanes[var.unit_number][var.lane_number][0] = true                                                    ; Set the global flag that this lane is loaded.
@@ -64,7 +65,7 @@ M400                                                                            
 M574 'f1 P"nil" S1                                                                                            ; Disable the endstop for the temporary
 M400
 M18 'f
-M584 P{var.total_axis-1}
+M584 P{#move.axes - 1} 
 if global.AFC_mainboard[var.unit_number] == 1
     while iterations < global.AFC_unit_total_lanes[var.unit_number]
         M950 J{global.AFC_trigger_input_numbers[var.unit_number][iterations]} C{global.AFC_prep_switch[var.unit_number][iterations]}

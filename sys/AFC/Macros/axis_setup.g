@@ -5,6 +5,7 @@ M584 P{#move.axes}                                                     ; Set the
 
 if !exists(param.A)                                                    ; Check if the required parameter A (Tool Number) exists
     M118 S"Missing the A parameter for the tool number"                 ; Error message
+    M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/axis_setup.g" S1
     abort                                                              ; Stop macro execution
 
 var tool_number = param.A                                              ; Assign parameter to local variable for cleaner syntax
@@ -40,3 +41,4 @@ M208 'f{global.AFC_max_min_axes[var.unit_number][1]} s0                ; Set max
 ;    M201 'e{global.AFC_steppers[var.unit_number][var.lane_number][7]}      ; Set acceleration (mm/s^2)
 ;    M208 'e{global.AFC_max_min_axes[var.unit_number][0]} s1                ; Set minimum axis limit (S1)
 ;    M208 'e{global.AFC_max_min_axes[var.unit_number][1]} s0                ; Set maximum axis limit (S0)
+M584 P{#move.axes - 1} 

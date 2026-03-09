@@ -48,6 +48,11 @@ var start = false
 ;** 1 = enabled
 var spoolman = 0
 
+;** initial unload
+;** 0 = use measurements
+;** 1 = use the global_machine_extruder_switches[0] which in the input switch. This must be condifured
+var initial_unload = 1
+
 ;** This is the Object Model Number of the axis we use for loading the filament. 
 ;** If you just have X, Y and Z then this should be set to 3. Each additional axis you've added will increment this number
 set global.Machine_om_axis_number = 4
@@ -348,4 +353,4 @@ set global.Machine_tip_skinnydip[4] = 0
 ;**░█░█░█░█░░░█░█░█░█░░█░░░░█▀▀░█░█░░█░░░█░░░░█▀▀░█▀█░▀▀█░░█░░░░█▀█░█▀▀░█▀▄░█▀▀░▀░▀░▀
 ;**░▀▀░░▀▀▀░░░▀░▀░▀▀▀░░▀░░░░▀▀▀░▀▀░░▀▀▀░░▀░░░░▀░░░▀░▀░▀▀▀░░▀░░░░▀░▀░▀▀▀░▀░▀░▀▀▀░▀░▀░▀
 
-set global.Machine_features={var.brush,var.cut,var.kick,var.park,var.poop,var.purge,var.start,var.spoolman} ; was AFC_features
+set global.Machine_features={var.brush,var.cut,var.kick,var.park,var.poop,var.purge,var.start,var.spoolman,var.initial_unload} ; was AFC_features

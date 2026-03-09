@@ -18,6 +18,7 @@ else
     if #global.M291_data[0] != 1
         M291 P"Select the Unit" K{global.M291_data[0]} S4 J1
         if input == -1
+            M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Unassign" S1
             abort
         set var.unit_number = input
     else
@@ -26,6 +27,7 @@ else
     ; 2b. Interactive Select Lane
     M291 P"Select the lane to unassign the spool from" K{global.M291_data[1][var.unit_number]} S4 J1
     if input == -1
+        M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Unassign" S1
         abort
     set var.lane_number = input
 

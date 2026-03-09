@@ -37,6 +37,7 @@ while iterations < var.length_filament_soak
 if global.Machine_cancelled = true                                                  ; allows print to be cancelled at this point
 	M291 P"Print has been cancelled" S0 T3
 		G4 S3
+		M291 P{"Aborting macro. Line "^line} R"0:/sys/start_print.g" S1
 		abort "Print cancelled."
 else  
 	if !move.axes[global.Machine_axis_number[0]].homed || !move.axes[global.Machine_axis_number[1]].homed || !move.axes[global.Machine_axis_number[2]].homed
@@ -45,14 +46,15 @@ else
 if global.Machine_cancelled = true                                                  ; allows print to be cancelled at this point
 	M291 P"Print has been cancelled" S0 T3
 	G4 S3
+	M291 P{"Aborting macro. Line "^line} R"0:/sys/start_print.g" S1
 	abort "Print cancelled."
 
 set global.AFC_extruder_temp[var.unit_number][var.tool_number] = param.C
 
 T{param.K}
 
-if global.slicerHotendTempOverride == 0										; check whether the hotend temperature should be overriden
+if global.Gcode_hotend_temp_override == 0										; check whether the hotend temperature should be overriden
 	M568 P{param.K} S{param.C} R{param.C} A2		                                                ; set hotend Temperature to whatever is set in slicer
 else
-	M568 P{param.K} S{global.slicerHotendTempOverride} R{global.slicerHotendTempOverride} A2							    ; set hotend temperature to the override temperature set in btncmd instead
+	M568 P{param.K} S{global.Gcode_hotend_temp_override} R{global.Gcode_hotend_temp_override} A2							    ; set hotend temperature to the override temperature set in btncmd instead
 M116 P{param.K}                                                                     ; wait for this temperature to be reached

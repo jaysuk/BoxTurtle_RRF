@@ -44,6 +44,7 @@ var FileName = "No file selected"
  
 if !exists(param.X)
 	if (job.file.fileName = "") || (job.file.fileName=null)
+		M291 P{"Aborting macro. Line "^line} R"0:/sys/start_after_delay.g" S1
 		abort "No print in progress"
 	else
 		set var.FileName=job.file.fileName
@@ -102,6 +103,7 @@ while state.time < var.RunTime
 		if global.Cancelled = true 
 			M291 P"Operation has been cancelled" S0 T3
 			G4 S3
+			M291 P{"Aborting macro. Line "^line} R"0:/sys/start_after_delay.g" S1
 			abort "Deferred print cancelled."
 
 	if exists(global.Machine_soak_time_override)

@@ -8,7 +8,7 @@
 var lane_number = 0
 var tool_number = 0
 var unit_number = 0
-var total_axis = 0
+var total_axis = #move.axes
 var safety_dist = 300          ; Max distance to search (must be longer than longest tube)
 var msg_time = 3                ; Message duration
 var axis_name = "f"             ; Reference only
@@ -32,6 +32,7 @@ else
 ; --- Pre-Flight Check ---
 if !global.AFC_lanes[var.unit_number][var.lane_number][0]
     M291 P{"Error: Unit "^var.unit_number^": Lane " ^ var.lane_number ^ " is not marked as Loaded. Aborting."} R"Calibration Failed" S2
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Lane - Measure First" S1
     abort
 
 ; ==========================================================================================
@@ -40,8 +41,8 @@ if !global.AFC_lanes[var.unit_number][var.lane_number][0]
 M291 P{"Calibrating Unit "^var.unit_number^": Lane " ^ var.lane_number ^ "..."} R"System Busy" S0 T{var.msg_time}
 
 ; Setup Motor
+M584 P{var.total_axis}
 M98 P"0:/sys/AFC/Macros/axis_setup.g" A{var.tool_number}
-set var.total_axis = #move.axes
 M584 P{var.total_axis}
 
 ; ==========================================================================================
@@ -113,6 +114,7 @@ if move.axes[{global.Machine_om_axis_number}].machinePosition == var.safety_dist
         while iterations < global.AFC_unit_total_lanes[var.unit_number]
             M950 J{global.AFC_trigger_input_numbers[var.unit_number][iterations]} C{global.AFC_prep_switch[var.unit_number][iterations]}
             M581 P{global.AFC_trigger_input_numbers[var.unit_number][iterations]} R2 T{global.AFC_trigger_numbers[var.unit_number][iterations]} S1
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Lane - Measure First" S1
     abort
 else
     set global.AFC_lanes[var.unit_number][var.lane_number][1] = move.axes[{global.Machine_om_axis_number}].machinePosition

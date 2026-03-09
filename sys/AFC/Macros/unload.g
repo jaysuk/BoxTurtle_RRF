@@ -25,6 +25,7 @@ var unload_retry_length = 50
 
 if !exists(param.A)                                                                                   ; This checks for the existance of param.A as it is needed for this macro to work
     M118 S{"Missing the tool number from this script call"}
+    M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/unload.g" S1
     abort
 
 var tool_number = param.A
@@ -105,7 +106,7 @@ else
     M118 S{"No Filament Loaded in Unit " ^ var.unit_number ^ " Lane "^var.lane_number^" to Unload"} ; If no filament is recorded as being loaded in the lane, this message will display
 
 M574 'f1 P"nil" S1                                                                                ; This frees up the load switch from being used as a GPIO input
-M584 P{var.total_axis-1}                                                                          ; This hides the axis used for movement
+M584 P{#move.axes - 1}                                                                          ; This hides the axis used for movement
 
 if global.AFC_mainboard[var.unit_number] == 1
     while iterations < global.AFC_unit_total_lanes[var.unit_number]

@@ -49,6 +49,7 @@ if sensors.gpIn[var.trail_idx].value == var.base_trail
     ; Cleanup and exit
     M950 J{var.adv_idx} C"nil"
     M950 J{var.trail_idx} C"nil"
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Test - Turtleneck" S1
     abort
 else
     ; PASS: Value changed
@@ -64,6 +65,7 @@ if sensors.gpIn[var.adv_idx].value == var.base_adv
     ; Cleanup and exit
     M950 J{var.adv_idx} C"nil"
     M950 J{var.trail_idx} C"nil"
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Test - Turtleneck" S1
     abort
 else
     ; PASS: Value changed

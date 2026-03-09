@@ -22,6 +22,7 @@ else
 
 if !global.AFC_features[var.unit_number][0]
     M291 P"This unit does not have any dc motors enabled." R"Aborting..." S1
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Test - DC Motor" S1
     abort
 
 M291 P"Select the lane DC motor to test" K{global.M291_data[2][var.unit_number]} S4 J1

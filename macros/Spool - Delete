@@ -18,11 +18,13 @@ while iterations < 100
 
 if var.spool_count == 0
     M291 P"No spool files found on the SD card." R"Directory Empty" S1 T3
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Delete" S1
     abort
 
 ; 2. Enter Spool ID
 M291 P{"Enter Spool ID to permanently delete. Current Spools: " ^ var.spool_list} R"Delete Spool" S5 J1
 if input == -1
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Delete" S1
     abort
 set var.spool_id = input
 
@@ -30,6 +32,7 @@ set var.spool_id = input
 var spool_file = "0:/spools/" ^ var.spool_id ^ ".g"
 if !fileexists(var.spool_file)
     M291 P{"Spool " ^ var.spool_id ^ " does not exist."} R"Error" S2
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Delete" S1
     abort
 
 ; 4. Check if spool is currently assigned to any lane
@@ -41,6 +44,7 @@ while var.check_u < #global.AFC_unit_CAN_ids
     while var.check_l < global.AFC_unit_total_lanes[var.check_u]
         if global.spoolman[var.check_u][var.check_l][0] == var.spool_id
             M291 P{"Cannot delete Spool " ^ var.spool_id ^ " because it is currently assigned to Unit " ^ var.check_u ^ " Lane " ^ var.check_l ^ ". Please unassign the spool first."} R"Delete Blocked" S2
+            M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Delete" S1
             abort
         set var.check_l = var.check_l + 1
     set var.check_u = var.check_u + 1
@@ -48,6 +52,7 @@ while var.check_u < #global.AFC_unit_CAN_ids
 ; 5. Confirm Deletion
 M291 P{"Are you absolutely sure you want to permanently delete Spool " ^ var.spool_id ^ "? This cannot be undone."} R"Confirm Delete" S3
 if input == -1
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Delete" S1
     abort
 
 ; 6. Delete the file using RRF M30 command

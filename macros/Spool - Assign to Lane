@@ -16,6 +16,7 @@ else
     if #global.M291_data[0] != 1
         M291 P"Select the Unit" K{global.M291_data[0]} S4 J1
         if input == -1
+            M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Assign to Lane" S1
             abort
         set var.unit_number = input
     else
@@ -24,12 +25,14 @@ else
     ; 2b. Select Lane
     M291 P"Select the lane to assign a spool to" K{global.M291_data[1][var.unit_number]} S4 J1
     if input == -1
+        M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Assign to Lane" S1
         abort
     set var.lane_number = input
 
 ; Check if the lane is actually loaded with filament
 if !global.AFC_lanes[var.unit_number][var.lane_number][0]
     M291 P{"Unit " ^ var.unit_number ^ " Lane " ^ var.lane_number ^ " is empty. You must load filament into the lane before assigning a spool."} R"Lane Empty" S2
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Assign to Lane" S1
     abort
 ; Scan SD card to list all created spool files
 var spool_list = ""
@@ -43,10 +46,12 @@ while iterations < 100
 
 if var.spool_count == 0
     M291 P"No spool files found. Please create one with 'Spool - Create' first." R"No Spools" S1 T3
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Assign to Lane" S1
     abort
 
 M291 P{"Enter Spool ID for this lane. Current Spools: " ^ var.spool_list} R"Assign Spool" S5 J1
 if input == -1
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Assign to Lane" S1
     abort
 set var.spool_id = input
 
@@ -59,6 +64,7 @@ while var.check_u < #global.AFC_unit_CAN_ids
     while var.check_l < global.AFC_unit_total_lanes[var.check_u]
         if global.spoolman[var.check_u][var.check_l][0] == var.spool_id
             M291 P{"Spool " ^ var.spool_id ^ " is already assigned to Unit " ^ var.check_u ^ " Lane " ^ var.check_l ^ ". Please unassign it first or select a different Spool ID."} R"Duplicate Spool" S2
+            M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Assign to Lane" S1
             abort
         set var.check_l = var.check_l + 1
     set var.check_u = var.check_u + 1
@@ -67,6 +73,7 @@ while var.check_u < #global.AFC_unit_CAN_ids
 var spool_file = "0:/spools/" ^ var.spool_id ^ ".g"
 if !fileexists(var.spool_file)
     M291 P{"Spool " ^ var.spool_id ^ " does not exist. Please run 'Spool - Create' first."} R"Error" S2
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Assign to Lane" S1
     abort
 
 ; 5. Load the spool data into temporary RAM (spool_load_temp)

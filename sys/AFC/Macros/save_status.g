@@ -1,3 +1,5 @@
+; param.A is used to identify tfree.g
+
 var v0 = false
 var v1 = 0
 var v2 = 0
@@ -29,7 +31,7 @@ if #global.AFC_unit_CAN_ids == 1
 else
     echo >>{var.filename} "set global.AFC_LED_array = " ^ global.AFC_LED_array
 ; Hand off Spool ID persistence to its dedicated macro to prevent array flattening
-if state.currentTool != -1
+if state.currentTool != -1 && !exists(param.A)
     echo >>{var.filename} "T" ^state.currentTool^" P0"
     echo >>{var.filename} "M98 P""0:/sys/AFC/Macros/tool_load_no_files.g"" A"^state.currentTool
 M98 P"0:/sys/AFC/Macros/spool_save_status.g"

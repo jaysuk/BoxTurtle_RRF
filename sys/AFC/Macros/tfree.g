@@ -117,14 +117,24 @@ set global.AFC_LED_array[var.unit_number][var.lane_number]=2                    
 M98 P"0:/sys/AFC/Macros/LEDs.g"                                                                                                     ; Flush LEDs
 
 ; --- Hotend Retraction ---
-M83                                                                                                                          ; Ensure relative extrusion mode
-G1 E{-var.retract} F600                                                                                                      ; Retract filament from hotend melt zone
-M400                                                                                                                         ; Wait for move completion
+if global.Machine_features[8] == 0
+    M83                                                                                                                          ; Ensure relative extrusion mode
+    G1 E{-var.retract} F600                                                                                                      ; Retract filament from hotend melt zone
+    M400                                                                                                                         ; Wait for move completion
+elif global.Machine_features[8] == 1
+    M950 J{global.AFC_buffer_input_numbers[var.unit_number][0]} C{"!"^global.Machine_extruder_switches[0]}
+    M83
+    while sensors.gpIn[global.AFC_buffer_input_numbers[var.unit_number][0]].value != 1
+        G1 E-5 F600
+        M400
+    M950 J{global.AFC_buffer_input_numbers[var.unit_number][0]} C"nil"
+    M400
 
 ; --- Hardware Unmapping ---
 M591 D1 P0                                                                                                                   ; Disable filament monitor D1
 M98 P"0:/sys/AFC/Macros/Extruder_setup.g" A{var.tool_number} B0                                                              ; Unmap extruder drive for this lane
 M98 P"0:/sys/AFC/Macros/Axis_setup.g" A{var.tool_number}                                                                     ; Map lane motor to temporary axis
+M584 P{#move.axes}
 G92 'f{global.AFC_lanes[var.unit_number][var.lane_number][2]}                                                                ; Set temporary 'F' axis position to known total length
 
 ; --- Main Retraction Sequence ---
@@ -133,7 +143,8 @@ if var.DC_motor == 1                                                            
     M400                                                                                                                     ; Wait for activation
 
 ; Unload Method 0: Sensor-based Retraction (Hub Switch)
-if global.AFC_features[var.unit_number][1] == 0                                                                              ; Check unit unload preference (Index 1: 0=Hub, 1=Lengths)
+if global.AFC_features[var.unit_number][1] == 0                                                                              ; Check unit unload preference (Index 1: 0=Hub, 1=Lengths) 
+    M400
     M574 'f1 P{"!"^global.AFC_hub_switch[var.unit_number]} S1                                                                ; Configure F-axis endstop to inverted hub switch for this unit
     G92 'f20000                                                                                                              ; Preset F position
     G1 H4 'f-20000 F{global.AFC_load_retract_speed[var.unit_number][1]*60}                                                   ; Homing move to retract until hub sensor triggers (Reverse Speed)
@@ -167,8 +178,8 @@ if global.AFC_features[var.unit_number][1] == 1                                 
 ; --- Final Cleanup ---
 set global.AFC_LED_array[var.unit_number][var.lane_number]=1                                                                 ; Set lane LED to Green (Ready)
 M98 P"0:/sys/AFC/Macros/LEDs.g"                                                                                                     ; Update physical LEDs
-M98 P"0:/sys/AFC/Macros/save_status.g"
-M584 P{var.total_axis-1}                                                                                                     ; Hide temporary 'F' axis
+M98 P"0:/sys/AFC/Macros/save_status.g" A1
+M584 P{#move.axes - 1}                                                                                                      ; Hide temporary 'F' axis
 M400                                                                                                                         ; Wait
 
 set global.Machine_last_tool = state.currentTool                                                                             ; Update last tool used (renamed from AFC_last_tool)

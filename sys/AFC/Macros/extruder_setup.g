@@ -15,10 +15,12 @@ var count = 0
 
 if !exists(param.A)                                                                   ; Check if lane number parameter exists
     M118 S"Missing the A parameter for the lane number"                                ; Error message
+    M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/extruder_setup.g" S1
     abort                                                                             ; Stop execution
 
 if !exists(param.B)                                                                   ; Check if map/unmap parameter exists
     M118 S"Missing the B parameter for whether to map or unmap the extruder"           ; Error message
+    M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/extruder_setup.g" S1
     abort                                                                             ; Stop execution
 
 ;var toolNumber = param.A                                                              ; Assign parameter A to local variable
@@ -120,7 +122,7 @@ if var.extruder == 1
     M203 E{var.speed}
     M201 E{var.accel}
     M83
-    M567 P{var.tool_number} E1:0                                                       ; Set mixing ratio to 1:0 (Main extruder moves, AFC motor stays still)
+    M567 P{var.tool_number} E1:1                                                       ; Set mixing ratio to 1:1 (Main extruder moves, AFC motor moves)
 
 if var.extruder == 0                                                                  ; Logic to UNMAP (Soft Disable) the AFC motor
     M567 P{var.tool_number} E1:0                                                       ; Set mixing ratio to 1:0 (Main extruder moves, AFC motor stays still)

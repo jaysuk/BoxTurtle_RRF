@@ -92,6 +92,7 @@ while iterations <  #global.AFC_unit_CAN_ids
             else
                 M291 P"Unsafe to automatically unload. Clear the printbed. Aborting..." R"Aborting" S0 T{var.msg_time}
                 M400
+                M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/startup_check.g" S1
                 abort
                                                                                                                         ; --- Unload Filament from Hub/Lane Only (No Hotend Unload) ---
         if !var.lane_in_extruder
@@ -104,7 +105,7 @@ while iterations <  #global.AFC_unit_CAN_ids
                                                                                                                         ; DC Assist (Reverse)
             M98 P"0:/sys/AFC/Motors/dc_motors.g" A"R" B{var.tool_to_load}                                                   ; Run the DC motor (if present) in reverse ('R') to wind the filament back onto the spool.
             M400
-            
+            M584 P{#move.axes} 
                                                                                                                         ; Retract until Hub Switch OPENS (P"!"...)
             M574 'f1 P{"!"^global.AFC_hub_switch[var.curUnit]} S1                                                                     ; Define the temporary 'F' axis endstop as the inverted hub switch.
             G92 'f{global.AFC_max_min_axes[var.curUnit][1]}                                                                                                   ; Set the 'F' axis position to a large absolute value (20000 mm).
@@ -127,7 +128,7 @@ while iterations <  #global.AFC_unit_CAN_ids
             M98 P"0:/sys/AFC/LEDs.g"                                                                             ; Execute the macro to update the physical LED lights.
             M98 P"0:/sys/AFC/Macros/save_status.g"
                                                                                                                         ; Hide Axis
-            M584 P{var.total_axis-1}                                                                                       ; Hide the temporary 'F' axis from the system/UI.
+            M584 P{#move.axes - 1}                                                                                        ; Hide the temporary 'F' axis from the system/UI.
             M400
 
     ; --- Re-Check Hub Status After Unload Attempt ---
@@ -141,6 +142,7 @@ while iterations <  #global.AFC_unit_CAN_ids
             M291 P"Hub still not empty. Aborting..." R"Aborting" S0 T{var.msg_time}
             M950 J{global.AFC_hub_input_number[var.curUnit]} C"nil"
             M400
+            M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/startup_check.g" S1
             abort
 
 ; ==========================================================================================
@@ -153,12 +155,12 @@ while iterations <  #global.AFC_unit_CAN_ids
         while iterations <  #global.AFC_unit_CAN_ids
             set var.curUnit = iterations
             set var.curLane = 0
-            
+             
             while var.curLane < global.AFC_unit_total_lanes[var.curUnit]                                                                        ; Loop through all available lanes (0 to N-1).
                 
                                                                                                                             ; Only check lanes that the software thinks are loaded
                 if global.AFC_lanes[var.curUnit][var.curLane][0]                                                                         ; Check if the current lane is marked as loaded.
-                    
+                    M584 P{#move.axes} 
                                                                                                                             ; M574 'f2 S1 P{switch} sets up the hub switch as a temporary 'F' axis endstop, stopping on the second trigger edge (S1 for low-level switch).
                     M574 'f2 S1 P{global.AFC_hub_switch[var.curUnit]} 
                     M400                                                                                                       ; Set the hub switch up as an endstop for the temporary 'F' axis.
@@ -199,6 +201,6 @@ while iterations <  #global.AFC_unit_CAN_ids
                     M18 'f                                                                                                     ; Disable (idle) the motor associated with the temporary 'F' axis.
                     M574 'f1 P"nil" S1                                                                                         ; Disable the 'F' axis endstop.
                     M400
-                    M584 P{var.total_axis-1}                                                                                   ; Hide the temporary 'F' axis again.
+                    M584 P{#move.axes - 1}                                                                                    ; Hide the temporary 'F' axis again.
                 set var.curLane = var.curLane + 1
             M291 P"System Ready." R"Startup Complete" S1 T{var.msg_time}

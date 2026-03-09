@@ -54,6 +54,7 @@ if global.Machine_kick[6] == "left" || global.Machine_kick[6] == "right"        
                                                                                                                   ; Safety Check: Calculate final X position and verify against X machine limits (xmin/xmax).
     if (global.Machine_kick[0] + var.location_factor[0] * global.Machine_kick[7] > var.xmax ) || (global.Machine_kick[0] + var.location_factor[0] * global.Machine_kick[7] < var.xmin )
         M118 S"X Kick move is outside your printer bounds. Check the kick_move_dist in your Machine_Vars.g file!" ; Send error message.
+        M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/kick.g" S1
         abort
     else
                                                                                                                   ; G1 X{Start X + Direction * Distance} F{Kick Speed}
@@ -64,10 +65,12 @@ elif global.Machine_kick[6] == "front" || global.Machine_kick[6] == "back"      
                                                                                                                   ; Safety Check: Calculate final Y position and verify against Y machine limits (ymin/ymax).
     if (global.Machine_kick[1] + var.location_factor[1] * global.Machine_kick[7] > var.ymax ) || (global.Machine_kick[1] + var.location_factor[1] * global.Machine_kick[7] < var.ymin )
         M118 S"Y Kick move is outside your printer bounds. Check the kick_move_dist in your Machine_Vars.g file!" ; Send error message (Note: Check correctly uses ymin/ymax but still references "kick_move_dist").
+        M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/kick.g" S1
         abort
     else
                                                                                                                   ; G1 Y{Start Y + Direction * Distance} F{Kick Speed}
         G1 Y{global.Machine_kick[1] + var.location_factor[1] * global.Machine_kick[7]} F{var.kick_speed}          ; Perform fast Y move to knock filament.
 else
     M118 S"Error in kick movement. Check the directions in your Machine_Vars.g file!"                             ; Fallback error if direction is unknown
+    M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/kick.g" S1
     abort

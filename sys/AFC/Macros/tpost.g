@@ -13,8 +13,14 @@
 ; --- Parameter Validation ---
 if !exists(param.A)
     M118 S"Missing the lane number"
+    M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/tpost.g" S1
     abort
-
+if global.Machine_tpre_failed
+    M118 S"Tpre has failed. Aborting tpost. The issue will need to be fixed manually"
+    M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/tpost.g" S1
+    set global.Machine_tpre_failed = false
+    T-1 P0
+    abort
 ; --- Variable Initialization ---
 var tpost_time = 0                                                                                                                         ; Variable to capture end time.
 var tpre_time = global.AFC_time                                                                                                            ; Retrieve start time captured in tpre.g.
@@ -24,6 +30,7 @@ var time_minutes = 0                                                            
 var tool_number = param.A                                                                                                                  ; Local variable for the lane number.
 var unit_number = global.Tool_to_AFC[var.tool_number][0]                                                                                   ; Get Unit ID from Tool ID
 var lane_number = global.Tool_to_AFC[var.tool_number][1]                                                                                   ; Get Local Lane ID (0-3)
+var tpost_start_extrusion = 0.0                                                                                                            ; Extruder position before priming, used to track purge/prime filament usage
 
 ; --- Heater Control ---
 ; If param.B is NOT present, or if it is NOT 1, proceed with heating.

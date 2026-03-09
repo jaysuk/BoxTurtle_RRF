@@ -13,7 +13,7 @@ var unit_number = 0
 var first_length = 0
 var additional_length = 0
 var total_length = 0
-var total_axis = 0
+var total_axis = #move.axes
 
 ; ==========================================================================================
 ; 1. Safety Checks & Selection
@@ -40,12 +40,14 @@ M950 J{global.AFC_hub_input_numbers[var.unit_number]} C{global.AFC_hub_switch[va
 if sensors.gpIn[global.AFC_hub_input_numbers[var.unit_number]].value != 0
     M291 P{"Error: Filament detected in Unit "^var.unit_number^" Hub Switch! Clear path before measuring."} R"Aborted" S2
     M950 J{global.AFC_hub_input_numbers[var.unit_number]} C"nil"
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Lane - Measure Main Length" S1
     abort
 
 ; Check if Selected Lane is actually loaded (Prevents grinding/air printing)
 if !global.AFC_lanes[var.unit_number][var.lane_number][0]
     M291 P{"Error: Unit "^var.unit_number^": Lane " ^ var.lane_number ^ " is not marked as Loaded. Cannot Measure."} R"Aborted" S2
     M950 J{global.AFC_hub_input_numbers[var.unit_number]} C"nil"
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Lane - Measure Main Length" S1
     abort
 
 ; Retrieve known start length
@@ -56,9 +58,9 @@ set var.first_length = global.AFC_lanes[var.unit_number][var.lane_number][1]
 ; ==========================================================================================
 M291 P{"Preparing Unit "^var.unit_number^": Lane " ^ var.lane_number ^ "..."} R"System Busy" S0 T{var.msg_time}
 
-M584 P{#move.axes} ; Reset axes visibility
+M584 P{var.total_axis} ; Reset axes visibility
 M98 P"0:/sys/AFC/Macros/axis_setup.g" A{var.tool_number}
-set var.total_axis = #move.axes
+M584 P{var.total_axis} 
 
 ; ==========================================================================================
 ; 3. Measurement Routine

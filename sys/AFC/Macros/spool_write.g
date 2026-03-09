@@ -9,12 +9,15 @@
 
 if !exists(param.U) || !exists(param.L)
     M118 S"Error: Missing unit (U) or lane (L) parameter for spool_write.g"
+    M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/spool_write.g" S1
     abort
 
 var spool_id = global.spool_active_data[param.U][param.L][0]
 
 ; If no spool is loaded (ID is -1), there is nothing to write.
 if var.spool_id == -1
+    M118 S"Error: No spool loaded on this lane for spool_write.g"
+    M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/spool_write.g" S1
     abort
 
 ; Re-construct the file line by line

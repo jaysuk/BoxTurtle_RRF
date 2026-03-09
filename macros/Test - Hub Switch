@@ -30,6 +30,7 @@ if sensors.gpIn[global.AFC_hub_input_numbers[var.unit_number]].value != 0
     ; FAIL STATE: User said it's empty, but sensor reads 1 (Present)
     M291 P{"Test Failed: The hub switch of Unit "^var.unit_number^" still reads 'Filament Present' when empty. Check wiring or obstructions."} R"Failure" S2
     M950 J{global.AFC_hub_input_numbers[var.unit_number]} C"nil" ; Free the pin
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Test - Hub Switch" S1
     abort ; Exit the macro immediately
 else
     M291 P{"Test Passed"} R"Success" S1 T3
@@ -44,6 +45,7 @@ if sensors.gpIn[global.AFC_hub_input_numbers[var.unit_number]].value == 0
     ; FAIL STATE: User inserted filament, but sensor reads 0 (Empty)
     M291 P{"Test Failed: The hub switch  of Unit "^var.unit_number^" reads 'Empty' while filament is inserted. Check wiring or switch positioning."} R"Failure" S2
     M950 J{global.AFC_hub_input_numbers[var.unit_number]} C"nil" ; Free the pin
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Test - Hub Switch" S1
     abort ; Exit the macro immediately
 else
     M291 P{"Test Passed"} R"Success" S1 T3

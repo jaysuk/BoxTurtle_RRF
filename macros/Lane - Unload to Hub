@@ -19,6 +19,7 @@ M291 P"WARNING: Only use this macro if the filament has NOT reached the extruder
 if exists(param.A)
     if param.A < 0 || param.A >= global.AFC_unit_total_available_lanes
         M118 S{"Invalid tool number: " ^ param.A}
+        M291 P{"Aborting macro. Line "^line} R"0:/macros/Lane - Unload to Hub" S1
         abort
     set var.tool_number = param.A
     set var.unit_number = global.Tool_to_AFC[var.tool_number][0]
@@ -27,6 +28,7 @@ else
     if #global.M291_data[0] != 1
         M291 P"Select the Unit" K{global.M291_data[0]} S4 J1
         if input == -1
+            M291 P{"Aborting macro. Line "^line} R"0:/macros/Lane - Unload to Hub" S1
             abort
         set var.unit_number = input
     else
@@ -34,6 +36,7 @@ else
 
     M291 P"Select the lane to unload to hub" K{global.M291_data[1][var.unit_number]} S4 J1
     if input == -1
+        M291 P{"Aborting macro. Line "^line} R"0:/macros/Lane - Unload to Hub" S1
         abort
     set var.lane_number = input
     set var.tool_number = global.AFC_lane_to_tool[var.unit_number][var.lane_number]
@@ -42,6 +45,7 @@ else
 ; Check software state
 if !global.AFC_lanes[var.unit_number][var.lane_number][0]
     M291 P{"Unit " ^ var.unit_number ^ ": Lane " ^ var.lane_number ^ " is not marked as loaded. Nothing to do."} R"Warning" S2
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Lane - Unload to Hub" S1
     abort
 
 ; Check hub switch physically — abort if hub is already clear
@@ -50,6 +54,7 @@ M400
 if sensors.gpIn[global.AFC_hub_input_numbers[var.unit_number]].value == 0
     M950 J{global.AFC_hub_input_numbers[var.unit_number]} C"nil"
     M291 P{"Unit " ^ var.unit_number ^ ": Hub is already clear — no filament detected at hub switch."} R"Nothing to do" S2
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Lane - Unload to Hub" S1
     abort
 M950 J{global.AFC_hub_input_numbers[var.unit_number]} C"nil"
 M400

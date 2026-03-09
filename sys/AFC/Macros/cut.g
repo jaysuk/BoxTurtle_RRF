@@ -46,6 +46,7 @@ elif global.Machine_cut_direction == "front" || global.Machine_cut_direction == 
     set var.pin_park_y_loc = global.Machine_cut_location[1] + (var.location_factor[1] * global.Machine_cut_dist[0])                        ; Calculate Y park position.
 else
     M118 S"Invalid cut direction. Check the cut_direction in your Machine_User_Vars.g file!"                                                ; Report error if direction is invalid.
+    M291 P{"Aborting macro. Line "^line} R{"0:/sys/AFC/Macros/cut.g" S1
     abort
 
 ; --- Safety Setup and Initial Retract/Lift ---
@@ -102,6 +103,7 @@ while iterations < {global.Machine_cut_move[6] - 1}
         set var.full_cut_loc_x = var.pin_park_x_loc + var.location_factor[0] * var.cut_dist                                        ; Calculate final cut X point.
         if var.full_cut_loc_x > var.xmax || var.full_cut_loc_x < var.xmin                                                          ; Safety Check: Check if final X position is within limits.
             M118 S"X Cut move is outside your printer bounds. Check the cut_move_dist in your Machine_User_Vars.cfg file!"
+            M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/cut.g" S1
             abort
         else
             G1 X{var.fast_slow_transition_loc_x} F{global.Machine_cut_move[0] * 60}                                                      ; Move to transition point (Fast Approach).
@@ -116,6 +118,7 @@ while iterations < {global.Machine_cut_move[6] - 1}
         set var.full_cut_loc_y = var.pin_park_y_loc + var.location_factor[1] * var.cut_dist                                        ; Calculate final cut Y point.
         if var.full_cut_loc_y > var.ymax || var.full_cut_loc_y < var.ymin                                                          ; Safety Check: Check if final Y position is within limits.
             M118 S"X Cut move is outside your printer bounds. Check the cut_move_dist in your Machine_User_Vars.cfg file!"                  ; Note: Error message incorrectly refers to 'X Cut move'.
+            M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/cut.g" S1
             abort
         else
             G1 Y{var.fast_slow_transition_loc_y} F{global.Machine_cut_move[0] * 60}                                                      ; Fast approach move.
@@ -125,6 +128,7 @@ while iterations < {global.Machine_cut_move[6] - 1}
             G1 Y{var.pin_park_y_loc} F{global.Machine_cut_move[2] * 60}                                                                  ; Fast return to park position.
     else
         M118 S"Invalid cut direction. Check the cut_direction in your Machine_User_Vars.g file!"
+        M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/cut.g" S1
         abort
 
 ; --- Final Pass and Rip ---
@@ -146,6 +150,7 @@ if global.Machine_cut_direction == "left" || global.Machine_cut_direction == "ri
     set var.full_cut_loc_x = var.pin_park_x_loc + var.location_factor[0] * var.cut_dist
     if var.full_cut_loc_x > var.xmax || var.full_cut_loc_x < var.xmin
         M118 S"X Cut move is outside your printer bounds. Check the cut_move_dist in your Machine_User_Vars.cfg file!"
+        M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/cut.g" S1
         abort
     else
         G1 X{var.fast_slow_transition_loc_x} F{global.Machine_cut_move[0] * 60}                                                          ; Fast approach to transition point.
@@ -162,6 +167,7 @@ elif global.Machine_cut_direction == "front" || global.Machine_cut_direction == 
     set var.full_cut_loc_y = var.pin_park_y_loc + var.location_factor[1] * var.cut_dist
     if var.full_cut_loc_y > var.ymax || var.full_cut_loc_y < var.ymin
         M118 S"Y Cut move is outside your printer bounds. Check the cut_move_dist in your Machine_User_Vars.cfg file!"                      ; Safety check.
+        M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/cut.g" S1
         abort
     else
         G1 Y{var.fast_slow_transition_loc_y} F{global.Machine_cut_move[0] * 60}                                                          ; Fast approach to transition point.
@@ -173,6 +179,7 @@ elif global.Machine_cut_direction == "front" || global.Machine_cut_direction == 
         G1 Y{var.pin_park_y_loc} F{global.Machine_cut_move[2] * 60}                                                                      ; Return to park position.
 else
     M118 S"Invalid cut direction. Check the cut_direction in your Machine_User_Vars.g file!"
+    M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/cut.g" S1
     abort
 
 ; --- Restore Motor Current ---

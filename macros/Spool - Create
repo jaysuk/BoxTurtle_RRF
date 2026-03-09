@@ -25,46 +25,54 @@ if var.spool_count == 0
 ; 1. Enter Spool ID
 M291 P{"Enter a unique ID for the new spool. Existing Spools: " ^ var.spool_list} R"Create Spool" S5 J1
 if input == -1
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Create" S1
     abort
 set var.new_id = input
 
 if fileexists("0:/spools/" ^ var.new_id ^ ".g")
     M291 P{"Spool ID " ^ var.new_id ^ " already exists! Aborting."} R"Error" S2
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Create" S1
     abort
     
 ; 2. Enter Filament Type
 M291 P"Enter the Filament Type (e.g. PLA, PETG, ABS):" R"Create Spool" S7
 if input == null
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Create" S1
     abort
 set var.type = input
 
 ; 3. Enter Color
 M291 P"Enter the Filament Color (e.g. Red, Black, Silk Blue):" R"Create Spool" S7
 if input == null
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Create" S1
     abort
 set var.color = input
 
 ; 4. Enter Manufacturer
 M291 P"Enter the Manufacturer (e.g. Bambu Lab, eSUN):" R"Create Spool" S7
 if input == null
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Create" S1
     abort
 set var.manuf = input
 
 ; 5. Enter Hex Color
 M291 P"Enter the Hex Color code (e.g. #FF0000) or leave blank:" R"Create Spool" S7
 if input == null
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Create" S1
     abort
 var hex_color = input
 
 ; 6. Enter Length
 M291 P"Enter the entire length of the spool in mm (1kg PLA is ~330000mm):" R"Create Spool" S5 J1
 if input == -1
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Create" S1
     abort
 set var.initial_length = input
 
 ; 7. Enter Density
 M291 P"Enter the material density in g/cm3 (PLA: 1.24):" R"Create Spool" S5 J1
 if input == -1
+    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Create" S1
     abort
 var density = input
 

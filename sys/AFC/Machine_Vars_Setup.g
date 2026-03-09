@@ -40,6 +40,10 @@ var start = false
 ; 0 = disabled
 ; 1 = enabled
 var spoolman = 0
+; initial unload
+; 0 = use measurements
+; 1 = use the global_machine_extruder_switches[0] which in the input switch. This must be condifured
+var initial_unload = 0
 
 ; This is the Object Model Number of the axis we use for loading the filament. 
 ; If you just have X, Y and Z then this should be set to 3. Each additional axis you've added will increment this number
@@ -318,7 +322,8 @@ global Machine_tip_skinnydip = {30,30,70,0,0} ; was AFC_tip_skinnydip
 ; 5 = purging
 ; 6 = start check
 ; 7 = spoolman support
-global Machine_features={var.brush,var.cut,var.kick,var.park,var.poop,var.purge,var.start,var.spoolman} ;
+; 8 = initial unload
+global Machine_features={var.brush,var.cut,var.kick,var.park,var.poop,var.purge,var.start,var.spoolman,var.initial_unload} ;
 
 ; ########## Additional Info ##########
 
@@ -374,3 +379,4 @@ global Machine_override_hotend_off = false           ; This allows turning off o
 ; was overrideHotendOff
 global Machine_cancelled = false                   ; This allows the start_print to be cancelled part way through
 ; was Cancelled
+global Machine_tpre_failed = false
