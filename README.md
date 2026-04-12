@@ -14,7 +14,7 @@ So far this has the following features implemented:
 * filament runout - untested
 
 It is highly recommended to run this with a cutter on your printer as there is currently no tip forming enabled.  
-This also only works with one AFC. Connecting multiple AFC's is currently not supported.
+Multiple AFC units can be connected via CAN bus — up to 8 units are supported.
 
 ### Brushing Notes
 
