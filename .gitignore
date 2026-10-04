@@ -1,0 +1,7 @@
+# Per-printer files created from the .example templates - never commit these
+sys/AFC/AFC_Unit_Count.g
+sys/AFC/[0-9]*/AFC_user_vars.g
+sys/AFC/Machine/Machine_user_vars.g
+
+# Runtime state written by the macros
+sys/AFC/Status/

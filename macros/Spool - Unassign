@@ -16,19 +16,17 @@ if exists(param.A) && exists(param.B)
 else
     ; 1b. Interactive Select Unit
     if #global.M291_data[0] != 1
-        M291 P"Select the Unit" K{global.M291_data[0]} S4 J1
-        if input == -1
-            M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Unassign" S1
-            abort
+        M291 P"Select the Unit" K{global.M291_data[0]} S4 J2
+        if result == -1                                                                ; cancelled
+            M99
         set var.unit_number = input
     else
         set var.unit_number = 0
 
     ; 2b. Interactive Select Lane
-    M291 P"Select the lane to unassign the spool from" K{global.M291_data[1][var.unit_number]} S4 J1
-    if input == -1
-        M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Unassign" S1
-        abort
+    M291 P"Select the lane to unassign the spool from" K{global.M291_data[1][var.unit_number]} S4 J2
+    if result == -1                                                                ; cancelled
+        M99
     set var.lane_number = input
 
 ; Check if a spool is actually assigned
@@ -40,10 +38,14 @@ else
     if !var.is_silent
         M291 P{"Are you sure you want to unassign Spool " ^ var.current_spool ^ " from Unit " ^ var.unit_number ^ " Lane " ^ var.lane_number ^ "?"} R"Confirm Unassign" S3
 
-    ; 4. Clear data
-    set global.spool_active_data[var.unit_number][var.lane_number] = {-1, "", "", "", 0.0, 0.0, "", "", ""}
-    set global.AFC_lanes[var.unit_number][var.lane_number][4] = {"None", "None"}
-    set global.spoolman[var.unit_number][var.lane_number] = {-1, global.spoolman[var.unit_number][var.lane_number][1]}
+    ; 4. Write the last known remaining length back to the spool file so it isn't lost
+    M98 P"0:/sys/AFC/Macros/spool_write.g" U{var.unit_number} L{var.lane_number}
+
+    ; 5. Clear data (full 12-field record)
+    set global.spool_active_data[var.unit_number][var.lane_number] = global.spool_empty_record
+    set global.AFC_lanes[var.unit_number][var.lane_number][4] = ["None", "None"]
+    set global.AFC_lane_hex[var.unit_number][var.lane_number] = ""
+    set global.spool_tracking[var.unit_number][var.lane_number] = [-1, global.spool_tracking[var.unit_number][var.lane_number][1]]
 
     M98 P"0:/sys/AFC/Macros/save_status.g"
 

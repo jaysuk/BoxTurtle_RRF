@@ -1,126 +1,127 @@
-; === Filament Runout / Error Recovery Macro (Duet RepRapFirmware) ===
-; This macro is typically called by a filament monitor (M591) upon detecting an error.
+; === Filament runout / error recovery (filament-error.g) ===
+; Run by the generated 0:/sys/filament-error.g (Create System Files -> Filament Errors) when the filament monitor of the
+; AFC extruder fires: the lane's LOAD switch opened during a print, i.e. the filament ran out.
+; RRF does NOT pause when 0:/sys/filament-error.g exists, so this macro pauses first. It runs on an asynchronous channel,
+; so a failed step here never cancels the print. M291 menus use J2 and test `result` (R2 triggers do not fire while a job is
+; paused, so reloading is detected by reading the lane's prep switch directly).
+;
+; Flow: M25 -> wait for the pause -> T-1 (tfree pulls the tail back) -> mark the lane empty ->
+;   infinite spool: the lane's backup (AFC_lane_backup) takes over this tool (tool map swap), T<n>, M24
+;   otherwise a menu: reload this lane / use another lane / leave it paused.
+; Needs a resume.g that returns the head to the pause position (the unload moves the head).
+;
+; param.D extruder number, param.B board (from RRF; only D is used). RRF also passes P (status) and S (text) to the event file;
+; P cannot be forwarded through M98 (it is the macro file name)
 
-; --- Macro Parameters (passed from the M591 error command) ---
-; param.B - CAN address of board hosting the filament monitor (used for complex setups).
-; param.D - Extruder # (The logical extruder index).
-; param.P - Filament error type code (e.g., runout, too fast, too slow).
+var tool = move.motionSystems[0].currentTool
+var unit_number = 0
+var lane_number = 0
+var lane_tool = 0
+var errors = 0
+var choice = 2
+var tries = 0
+var u = 0
+var l = 0
+var backup = -1
+var done = false
 
-M226                                                                                                                                ; Pause the print immediately upon detection of the filament error.
+; --- Only act on a running print and on an AFC extruder ---
+if job.file.fileName == null
+    M118 S"AFC: filament error reported while no print is running - ignored"
+    M99
+if var.tool < 0 || var.tool >= #global.AFC_tool_map
+    M25                                                                       ; RRF would have paused; keep that for tools we don't manage
+    M99
+if !exists(param.D) || param.D != tools[var.tool].extruders[#tools[var.tool].extruders - 1]
+    M25
+    M99
 
-; --- Parameter Validation ---
-var tool_number = param.D                                                                                                           ; Assign the input parameter to a local variable for easier use.
-var unit_number = global.Tool_to_AFC[var.tool_number][0]
-var lane_number = global.Tool_to_AFC[var.tool_number][1]
-var curUnit = 0
-var curLane = 0
-var choice = 0                                                                                                                      ; Local variable to store the user's main recovery choice (0 or 1).
-var choice_lane = 0                                                                                                                 ; Local variable to store the index of the new lane selected by the user.
-var tool_to_load = 0
-var countdown = 0
-var choice_unit = 0
+set var.unit_number = global.AFC_tool_map[var.tool][0]
+set var.lane_number = global.AFC_tool_map[var.tool][1]
+set var.lane_tool = global.AFC_lane_to_tool[var.unit_number][var.lane_number]
 
-; --- Initial Unload of the Failed Filament ---
-; Check AFC feature flag 0 (use DC motor on unload) to determine the tfree call parameters.
-; 0 = use dc motors
-; 1 = how to unload? hubswitch or lengths?
-if global.AFC_features[var.unit_number][0]
-    M98 P"0:/sys/AFC/Macros/tfree.g" A{var.tool_number} B1                                                                          ; Call tool-free macro, enabling DC assist (B1).
-else
-    M98 P"0:/sys/AFC/Macros/tfree.g" A{var.tool_number} B0                                                                          ; Call tool-free macro, disabling DC assist (B0).
+; --- Pause (from this channel RRF turns it into a deferred M226 if a macro is running) and wait for it ---
+M25
+while iterations < 120 && state.status != "paused"
+    G4 S1
+if state.status != "paused"
+    M118 S"AFC: the print did not pause - the runout was not handled"
+    M99
+M118 S{"AFC: tool "^var.tool^" (Unit "^var.unit_number^" Lane "^var.lane_number^") ran out of filament"}
 
-M98 P"0:/sys/AFC/Macros/unload.g" A{var.tool_number} B1                                                                             ; Call the specific AFC unload macro for the failed lane. (B1 is likely a flag for 'error unload').
+; --- Unload the tail with a normal T-1 (cut, park, retract to the lane's park position) ---
+set var.errors = global.AFC_error_count
+T-1
+if global.AFC_error_count != var.errors
+    M118 S"AFC: unloading after the runout failed - the print stays paused"
+    M99
 
-; --- Check for Continuous Feed Backup (Auto-switch logic) ---
-; This loop checks if any other active lane is flagged for continuous feed, and if so, initiates a switch.
-if global.AFC_lanes[var.unit_number][var.lane_number][3]                                                                            ; Check if the failed lane was set as continuous (should fail if runout is detected).
-    while iterations < #global.AFC_unit_CAN_ids
-        set var.curUnit = iterations
-        set var.curLane = 0
-        ; FIX: Updated variable name to 'global.AFC_unit_total_lanes' to match AFC_Units.g
-        while var.curLane < global.AFC_unit_total_lanes[var.curUnit]                                                                ; Iterate through all defined lanes.
-            if (var.curLane != var.lane_number) && (var.curUnit != var.unit_number)                                                 ; Skip the current failed lane.
-                if global.AFC_lanes[var.curUnit][var.curLane][3]                                                                    ; Check if a different lane is marked for continuous use.
-                    if var.curUnit = 0
-                        set var.tool_to_load = var.lane_number
-                    else 
-                        set var.countdown = var.curUnit
-                        set var.tool_to_load = var.lane_number
-                        while iterations < var.countdown
-                            set var.tool_to_load = var.tool_to_load + global.AFC_unit_total_lanes[iterations]
-                            set var.countdown = var.countdown - 1  
-                    M98 P"0:/sys/AFC/Macros/tpre.g" A{var.tool_to_load}                                                             ; Prepare the new continuous lane (load sequence pre-macro).
-                    M98 P"0:/sys/AFC/Macros/tpost.g" A{var.tool_to_load} B1                                                         ; Complete the tool change (load sequence post-macro, B1 likely signals 'error recovery').
-                    set global.AFC_lanes[var.curUnit][var.curLane][3] = false                                                       ; Clear the continuous flag on the *failing* lane.
-                    M24                                                                                                             ; Resume the paused print (M24).
-            set var.curLane = var.curLane + 1
+; --- The lane is empty now (its tail was pulled back to the park position and has to be removed by hand) ---
+set global.AFC_lanes[var.unit_number][var.lane_number][0] = false
+set global.AFC_LED_array[var.unit_number][var.lane_number] = 0
+M98 P"0:/macros/Spool - Unassign" A{var.unit_number} B{var.lane_number}       ; silent: writes the last length, clears the lane's spool
+M98 P"0:/sys/AFC/Macros/leds.g"
+M98 P"0:/sys/AFC/Macros/save_status.g"
 
-; --- User Interaction (Manual Recovery Selection) ---
-; M291: Display a popup message. S4: Modal; J1: Collects user input; K: Button options.
-M291 P"Select the option below" S4 J1 K{"Reload Lane "^{var.lane_number},"Continue with a different Lane"}                          ; Prompt user for recovery choice.
-set var.choice=input                                                                                                                ; Store user's button selection (0 or 1).
-
-; --- Choice 0: Reload Current Lane ---
-if var.choice == 0                                                                                                                  ; If user selects "Reload Lane X".
-    M291 R"Lane "^{var.lane_number}^" Filament Runout" P"Reload filament into lane "^{var.lane_number}^" and click ok" S2           ; Display a persistent (S2) message prompting user to physically reload the filament.
-    if var.unit_number = 0
-        set var.tool_to_load = var.lane_number
-    else 
-        set var.countdown = var.unit_number
-        set var.tool_to_load = var.lane_number
-        while iterations < var.countdown
-            set var.tool_to_load = var.tool_to_load + global.AFC_unit_total_lanes[iterations]
-            set var.countdown = var.countdown - 1
-    if global.AFC_lanes[var.unit_number][var.lane_number][0]                                                                        ; Check if the lane is now loaded (assumes user reloaded and clicked OK on the M291).
-        M98 P"0:/sys/AFC/Macros/tpre.g" A{var.tool_to_load}                                                                         ; Prepare the reloaded lane (tpre.g).
-        M98 P"0:/sys/AFC/Macros/tpost.g" A{var.tool_to_load} B1                                                                     ; Complete the tool load/change (tpost.g).
-        M24                                                                                                                         ; Resume the print.
-
-; --- Choice 1: Switch to a Different Lane ---
-if var.choice == 1                                                                                                                  ; If user selects "Continue with a different Lane".
-    ; FIX: Updated to use global.M291_data[0] for Unit List
-    if #global.M291_data[0] != 1
-        M291 P"Select the Unit" K{global.M291_data[0]} S4 J1
-        set var.choice_unit = input
-    
-    ; FIX: Updated to use global.M291_data[1] for Lane List
-    M291 P"Select the lane to be used" K{global.M291_data[1][var.choice_unit]} S4 J1                                                ; Prompt user to choose the new lane.
-    set var.choice_lane=input                                                                                                       ; Store the selected new lane index.
-
-    if var.choice_unit = 0
-        set var.tool_to_load = var.choice_lane
-    else 
-        set var.countdown = var.choice_unit
-        set var.tool_to_load = var.choice_lane
-        while iterations < var.countdown
-            set var.tool_to_load = var.tool_to_load + global.AFC_unit_total_lanes[iterations]
-            set var.countdown = var.countdown - 1
-
-    if global.AFC_lanes[var.choice_unit][var.choice_lane][0]                                                                        ; Check if the selected new lane is loaded with filament.
-        M98 P"0:/sys/AFC/Macros/tpre.g" A{var.choice_lane}                                                                          ; Prepare the new lane.
-        M98 P"0:/sys/AFC/Macros/tpost.g" A{var.choice_lane} B1                                                                      ; Complete the tool change.
-        M24                                                                                                                         ; Resume the print.
+; --- Infinite spool: the backup lane takes over this tool ---
+set var.backup = global.AFC_lane_backup[var.unit_number][var.lane_number]
+if var.backup >= 0 && var.backup < #global.Tool_to_AFC
+    set var.u = global.Tool_to_AFC[var.backup][0]
+    set var.l = global.Tool_to_AFC[var.backup][1]
+    if global.AFC_lanes[var.u][var.l][0]
+        set var.errors = global.AFC_error_count
+        M98 P"0:/sys/AFC/Macros/tool_map_swap.g" A{var.tool} B{var.backup}
+        if global.AFC_error_count == var.errors
+            M118 S{"AFC: Unit "^var.u^" Lane "^var.l^" takes over tool "^var.tool}
+            set var.done = true
     else
-                                                                                                                                    ; --- Secondary Lane Choice (If first choice was unloaded) ---
-        ; FIX: Updated to use global.M291_data[0] for Unit List
+        M118 S{"AFC: the backup lane (Unit "^var.u^" Lane "^var.l^") is empty"}
+
+; --- No (usable) backup: ask ---
+while !var.done
+    M291 P{"Tool "^var.tool^" (Unit "^var.unit_number^" Lane "^var.lane_number^") ran out of filament. The print is paused."} R"Filament runout" K{"Reload this lane", "Use another lane", "Leave it paused"} S4 J2
+    if result == -1
+        M99
+    set var.choice = input
+    if var.choice == 2
+        M99
+
+    if var.choice == 0                                                        ; Reload this lane
+        set var.tries = 0
+        while var.tries < 3 && !global.AFC_lanes[var.unit_number][var.lane_number][0]
+            M291 P{"Remove the old tail from Unit "^var.unit_number^" Lane "^var.lane_number^", insert the new filament and press OK"} R"Reload lane" S2
+            if sensors.gpIn[global.AFC_trigger_input_numbers[var.unit_number][var.lane_number]].value == 1   ; prep switch sees filament
+                M98 P"0:/sys/AFC/Macros/triggers.g" A{var.lane_tool}          ; feeds it to the load switch, parks it, marks the lane loaded
+            else
+                M118 S"AFC: no filament detected at the lane's prep switch"
+            set var.tries = var.tries + 1
+        if global.AFC_lanes[var.unit_number][var.lane_number][0]
+            set var.done = true
+
+    elif var.choice == 1                                                      ; Use another lane (swap the tool map)
         if #global.M291_data[0] != 1
-            M291 P"Select a different Unit as the chosen lane was empty" K{global.M291_data[0]} S4 J1
-            set var.choice_unit = input
-        
-        ; FIX: Updated to use global.M291_data[1] for Lane List
-        M291 P"Select a different lane to be used as the chosen lane was empty" K{global.M291_data[1][var.choice_unit]} S4 J1       ; Prompt user to choose the new lane.
-        set var.choice_lane=input                                                                                                   ; Store the selected new lane index.
+            M291 P"Select the Unit" K{global.M291_data[0]} S4 J2
+            if result == -1
+                M99
+            set var.u = input
+        else
+            set var.u = 0
+        M291 P"Select the lane to continue with" K{global.M291_data[1][var.u]} S4 J2
+        if result == -1
+            M99
+        set var.l = input
+        if !global.AFC_lanes[var.u][var.l][0]
+            M118 S{"AFC: Unit "^var.u^" Lane "^var.l^" is empty"}
+        else
+            set var.errors = global.AFC_error_count
+            M98 P"0:/sys/AFC/Macros/tool_map_swap.g" A{var.tool} B{global.AFC_lane_to_tool[var.u][var.l]}
+            if global.AFC_error_count == var.errors
+                set var.done = true
 
-        if var.choice_unit = 0
-            set var.tool_to_load = var.choice_lane
-        else 
-            set var.countdown = var.choice_unit
-            set var.tool_to_load = var.choice_lane
-            while iterations < var.countdown
-                set var.tool_to_load = var.tool_to_load + global.AFC_unit_total_lanes[iterations]
-                set var.countdown = var.countdown - 1
-
-        if global.AFC_lanes[var.choice_unit][var.choice_lane][0]                                                                    ; Check if the selected new lane is loaded with filament.
-            M98 P"0:/sys/AFC/Macros/tpre.g" A{var.choice_lane}                                                                      ; Prepare the new lane.
-            M98 P"0:/sys/AFC/Macros/tpost.g" A{var.choice_lane} B1                                                                  ; Complete the tool change.
-            M24                                                                                                                     ; Resume the print.
+; --- Load the new lane through the normal tool change (tpre/tpost) and resume ---
+set var.errors = global.AFC_error_count
+T{var.tool}
+if global.AFC_error_count != var.errors
+    M118 S"AFC: loading the replacement lane failed - the print stays paused"
+    M99
+M24

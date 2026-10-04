@@ -36,11 +36,20 @@ if global.Machine_part_cooling_fan[0]                                           
 set var.backup_feedrate = (move.speedFactor * 100)                                                      ; Capture original M220 speed factor (scaled by 100).
 M220 S100                                                                                               ; Set M220 speed factor to 100% for predictable movement.
 
-; TODO add handling of slicer driven purge values
-set var.purge_len = global.Machine_purge_length[0]                                                      ; Set target purge length from configuration (index 0).
+; Purge length: the slicer's value (set_temp_global.g C) tuned by the modifier/addition, else the fixed default
+if global.Machine_slicer_purge >= 0
+    set var.purge_len = global.Machine_slicer_purge * global.Machine_purge_length_modifier + global.Machine_purge_length_addition
+    set global.Machine_slicer_purge = -1                                                                ; used up: the next tool change needs its own value
+else
+    set var.purge_len = global.Machine_purge_length[0]                                                  ; Fixed purge length from configuration (index 0).
 
 ; Apply purge minimum
 set var.purge_len = max(var.purge_len,global.Machine_purge_length[1])                                   ; Enforce a minimum purge length (index 1).
+
+; With the cutter the prime only reaches the cutter, so the old filament stub (cutter to nozzle, minus what was retracted
+; before the cut) is pushed out first: add it, so the purge length means "new filament through the nozzle" (B48).
+if global.Machine_features[1]
+    set var.purge_len = var.purge_len + max(global.Machine_extruder_measurements[2] - global.Machine_cut_retract_length, 0)
 
 M98 P"0:/sys/AFC/Macros/debug.g" A"AFC_Poop: Move To Purge Location"                                    ; Log move to purge location.
 

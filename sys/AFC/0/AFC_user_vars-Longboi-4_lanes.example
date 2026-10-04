@@ -26,7 +26,7 @@ else
 ;** 0 = machine tool number
 ;** 1 = motion system
 
-;set global.tool_and_motion[var.unit_number] = {0, 0}
+;set global.tool_and_motion[var.unit_number] = [0, 0]
 
 ;** This sets the mainboard type.
 ;** 0 = AFC-Lite v1.0 or v1.1
@@ -38,7 +38,7 @@ set global.AFC_mainboard[var.unit_number] = 1
 ;** If you have more or less lanes, adjust this array to match. E.g. if you have 3 lanes {0,0,0}, if you have 6 lanes {0,0,0,0,0,0}
 ;** The array length must match the number of lanes you have.
 
-;var driver_number = {0.0,0.1,0.2,0.3} 
+;var driver_number = [0.0,0.1,0.2,0.3] 
 
 ;** This sets the S value used in M569
 ;** Snnn Direction of movement of the motor(s) attached to this driver: 0 = backwards, 1 = forwards
@@ -46,20 +46,20 @@ set global.AFC_mainboard[var.unit_number] = 1
 ;** If you have more or less lanes, adjust this array to match. E.g. if you have 3 lanes {0,0,0}, if you have 6 lanes {0,0,0,0,0,0}
 ;** The array length must match the number of lanes you have.
 
-;var step_dir = {0,0,0,0}
+;var step_dir = [0,0,0,0]
 
 ;** This sets the microstepping used by each of the lane stepper motors. There should be no need to adjust this with a default AFC build
 ;** This can be set to 1, 2, 4, 8, 16, 32, 64, 128 and 256. If you adjust this setting make sure you adjust the steps per mm to suit
 ;** If you have more or less lanes, adjust this array to match. E.g. if you have 3 lanes {0,0,0}, if you have 6 lanes {0,0,0,0,0,0}
 ;** The array length must match the number of lanes you have.
 
-;var microsteps = {16,16,16,16}
+;var microsteps = [16,16,16,16]
 
 ;** This sets the steps per mm of each lane. There should be no need to adjust this with a default AFC build
 ;** If you have more or less lanes, adjust this array to match. E.g. if you have 3 lanes {0,0,0}, if you have 6 lanes {0,0,0,0,0,0}
 ;** The array length must match the number of lanes you have.
 
-;var spm = {682,682,682,682}
+;var spm = [682,682,682,682]
 
 ;** This is the current used by each stepper driver. 
 ;** This is in mA.
@@ -67,7 +67,7 @@ set global.AFC_mainboard[var.unit_number] = 1
 ;** If you have more or less lanes, adjust this array to match. E.g. if you have 3 lanes {0,0,0}, if you have 6 lanes {0,0,0,0,0,0}
 ;** The array length must match the number of lanes you have.
 
-;var current = {1000,1000,1000,1000}
+;var current = [1000,1000,1000,1000]
 
 ;** This is the jerk setting for motor jerk set per lane. 
 ;** These are in mm/s
@@ -75,7 +75,7 @@ set global.AFC_mainboard[var.unit_number] = 1
 ;** If you have more or less lanes, adjust this array to match. E.g. if you have 3 lanes {0,0,0}, if you have 6 lanes {0,0,0,0,0,0}
 ;** The array length must match the number of lanes you have.
 
-;var jerk = {60,60,60,60}                             
+;var jerk = [60,60,60,60]                             
 
 ;** This is the maximum speed for each lane. 
 ;** These are in mm/s
@@ -83,7 +83,7 @@ set global.AFC_mainboard[var.unit_number] = 1
 ;** If you have more or less lanes, adjust this array to match. E.g. if you have 3 lanes {0,0,0}, if you have 6 lanes {0,0,0,0,0,0}
 ;** The array length must match the number of lanes you have.
 
-;var max_speed = {60,60,60,60}
+;var max_speed = [60,60,60,60]
 
 ;** This is the maximum acceleration for each lane. 
 ;** These are in mm/s2
@@ -91,7 +91,7 @@ set global.AFC_mainboard[var.unit_number] = 1
 ;** If you have more or less lanes, adjust this array to match. E.g. if you have 3 lanes {0,0,0}, if you have 6 lanes {0,0,0,0,0,0}
 ;** The array length must match the number of lanes you have.
 
-;var acc = {3000,3000,3000,3000}
+;var acc = [3000,3000,3000,3000]
 
 ;** This is the load and retract speeds used when using the lanes.
 ;** The values are in mm/s
@@ -100,39 +100,38 @@ set global.AFC_mainboard[var.unit_number] = 1
 ;** 1 = the unload speed
 ;** 2 = the load speed of the extruder
 
-;set global.AFC_load_retract_speed[var.unit_number] = {35,35,5}
+;set global.AFC_load_retract_speed[var.unit_number] = [35,35,5]
 
 ;** This is the length to use for the loading and measuring and should be greater than the main bowden length.
 ;** There is no reason to change this default value
 ;** The array size must not be increased
 
-;set global.AFC_max_min_axes[var.unit_number] = {-500, 20000}
+;set global.AFC_max_min_axes[var.unit_number] = [-500, 20000]
 
 ;** These are the RRF trigger numbers to be used by the loading switches.
 ;** The gcode these are used with is the T value in M581
 ;** These will need adjusting if you have any other triggers setup.
 ;** These trigger numbers should be sequential across each AFC unit.
-;** For example, if you have two AFC units of 4 lanes, the second trigger numbers would start at 10.
-;** The buffer trigger numbers would then start after the last normal trigger numbers, so the buffer numbers would start at 18
+;** These numbers are allocated automatically (see docs/maintainers/HARDWARE_RESOURCES.md) - only override them if you must.
+;** For example, with two AFC units of 4 lanes the lane triggers are 2-5 and 6-9, then each unit gets two buffer triggers: 10,11 and 12,13.
 ;** The array size for the AFC_trigger_numbers must match the amount of lanes you have
 ;** The array size for the AFC_buffer_trigger_numbers must not be changed
 
-;set global.AFC_trigger_numbers[var.unit_number] = {2,3,4,5}
-;set global.AFC_buffer_trigger_numbers[var.unit_number] = {10,11}
+;set global.AFC_trigger_numbers[var.unit_number] = [2,3,4,5]
+;set global.AFC_buffer_trigger_numbers[var.unit_number] = [6,7]                ; single 4-lane unit; two units: {10,11} and {12,13}
 
 ;** These are the used with the triggers to create the inputs
 ;** The gcode these are used with is the J value in M950
 ;** These will need adjusting if you have any other triggers setup.
 ;** These trigger numbers should be sequential across each AFC unit.
-;** For example, if you have two AFC units of 4 lanes, the second trigger input numbers would start at 8.
-;** The buffer input trigger numbers would then start after the last normal trigger input numbers, so the buffer numbers would start at 16 and so on
+;** For example, with two AFC units of 4 lanes the lane inputs are 0-3 and 4-7, then two buffer inputs per unit (8,9 and 10,11), then one hub input per unit (12, 13), then one unload input per unit (14, 15).
 ;** The array size for the AFC_trigger_input_numbers must match the amount of lanes you have
 ;** The array size for the AFC_buffer_input_trigger_numbers must not be changed
 
-;set global.AFC_trigger_input_numbers[var.unit_number] = {0,1,2,3}
-;set global.AFC_buffer_input_numbers[var.unit_number] = {8,9}
-;set global.AFC_hub_input_numbers[var.unit_number] = 10
-;set global.AFC_unload_input_numbers[var.unit_number] = 11
+;set global.AFC_trigger_input_numbers[var.unit_number] = [0,1,2,3]
+;set global.AFC_buffer_input_numbers[var.unit_number] = [4,5]                ; single 4-lane unit
+;set global.AFC_hub_input_numbers[var.unit_number] = 6
+;set global.AFC_unload_input_numbers[var.unit_number] = 7   ; unit 0 entry is also the extruder input switch (initial unload 1)
 
 ;** This is how far the filament is retracted after the hub switch is activated when doing the initial measurement.
 ;** Its also used in filament unloading
@@ -145,7 +144,7 @@ set global.AFC_mainboard[var.unit_number] = 1
 ;** 1 = the retry amount
 ;** The array size must not be increased
 
-;set global.AFC_hub_load_distance[var.unit_number] = {35, 5}
+;set global.AFC_hub_load_distance[var.unit_number] = [45, 5]
 
 ;** This is how far the filament is retracted after the turtleneck is activated after a filament load.
 ;** Its also used in filament unloading
@@ -159,32 +158,32 @@ set global.AFC_mainboard[var.unit_number] = 1
 ;** 2 = load method (0=Use turtleneck, 1=lengths, 2=Use preload switch)
 ;** The array size must not be increased
 
-;set global.AFC_features[var.unit_number] = {true, 0, 0}
+;set global.AFC_features[var.unit_number] = [true, 0, 0]
 
 ;** These are the SLP pins for the motor. This will not need editing if using an AFC board
 ;** If you have more or less lanes, adjust this array to match. E.g. if you have 3 lanes {0,0,0}, if you have 6 lanes {0,0,0,0,0,0}
 ;** The array length must match the number of lanes you have.
 
-;var SLP_pins = {"SLP1","SLP2","SLP3","SLP4"} 
+;var SLP_pins = ["SLP1","SLP2","SLP3","SLP4"] 
 
 ;** These are the DC1 pins for the motor. This will not need editing if using an AFC board
 ;** If you have more or less lanes, adjust this array to match. E.g. if you have 3 lanes {0,0,0}, if you have 6 lanes {0,0,0,0,0,0}
 ;** The array length must match the number of lanes you have.
 
-;var DC1_pins = {"dc11","dc12","dc13","dc14"} 
+;var DC1_pins = ["dc11","dc12","dc13","dc14"] 
 
 ;** These are the DC2 pins for the motor. This will not need editing if using an AFC board
 ;** If you have more or less lanes, adjust this array to match. E.g. if you have 3 lanes {0,0,0}, if you have 6 lanes {0,0,0,0,0,0}
 ;** The array length must match the number of lanes you have.
 
-;var DC2_pins = {"dc21","dc22","dc23","dc24"} 
+;var DC2_pins = ["dc21","dc22","dc23","dc24"] 
 
 ;** These are the prep switch pins. This will not need editing if using an AFC board
 ;** If you have more or less lanes, adjust this array to match. E.g. if you have 3 lanes {0,0,0}, if you have 6 lanes {0,0,0,0,0,0}
 ;** The array length must match the number of lanes you have.
 ;** var p_s_p must also be uncommented for the values to be correctly overriden
 
-var p_s = {"SW1","SW4","SW5","SW8"} 
+var p_s = ["SW1","SW4","SW5","SW8"] 
 
 ;** This is to set a leading character to the pin for the prep switch
 ;** ! = inverted
@@ -198,7 +197,7 @@ var p_s_p = "^!"
 ;** The array length must match the number of lanes you have.
 ;** var l_s_p must also be uncommented for the values to be correctly overriden
 
-var l_s = {"SW2","SW3","SW6","SW7"} 
+var l_s = ["SW2","SW3","SW6","SW7"] 
 
 ;** This is to set a leading character to the pin for the load pin
 ;** ! = inverted
@@ -211,7 +210,7 @@ var l_s_p = "^"
 ;** The array size must not be increased
 ;** var tn_s_p must also be uncommented for the values to be correctly overriden
 
-var turtleneck_switches = {"SW15","SW16"} 
+var turtleneck_switches = ["SW15","SW16"] 
 
 ;** This is to set a leading character to the pin for the turtleneck switch
 ;** ! = inverted
@@ -239,52 +238,52 @@ set global.AFC_neopixel_port_qty[var.unit_number] = 2
 ;** This sets whether any of the leds strips are reversed
 ;** This can be more than 1 value if there is more than one port. 
 ;** Can be true or false
-;** If it is a single value make sure it is followed by a comma
+;** A single value is just [x] (RRF 3.7)
 ;** The array length must match the number of ports
 
-var neopixel_reverse_lane_order = {true,false}
+var neopixel_reverse_lane_order = [true,false]
 
 ;** This is the neopixel pin name
-;** If it is a single value make sure it is followed by a comma
+;** A single value is just [x] (RRF 3.7)
 ;** The array length must match the number of ports
 
-var neopixel_pin = {"neopixel2","neopixel3"}
+var neopixel_pin = ["neopixel2","neopixel3"]
 
 ;** This is the LED code (M950 E code)
-;** If it is a single value make sure it is followed by a comma
+;** A single value is just [x] (RRF 3.7)
 ;** The array length must match the number of ports
 
-var neopixel_led_number = {0,1}
+var neopixel_led_number = [0,1]
 
 ;** This is the LED Type (M950 T code)
-;** If it is a single value make sure it is followed by a comma
+;** A single value is just [x] (RRF 3.7)
 ;** The array length must match the number of ports
 
-var neopixel_type = {1,1}
+var neopixel_type = [1,1]
 
 ;** This is the Number of LEDs per Neopixel Port (M950 U code)
-;** If it is a single value make sure it is followed by a comma
+;** A single value is just [x] (RRF 3.7)
 ;** The array length must match the number of ports
 
-var neopixel_quantity = {12,12}
+var neopixel_quantity = [12,12]
 
 ;** This is the Number of LEDs per Lane (M950 U code)
-;** If it is a single value make sure it is followed by a comma
+;** A single value is just [x] (RRF 3.7)
 ;** The array length must match the number of ports
 
-var neopixel_per_lane = {6,6}
+var neopixel_per_lane = [6,6]
 
 ;** This is the LED Brightness (0-255)
-;** If it is a single value make sure it is followed by a comma
+;** A single value is just [x] (RRF 3.7)
 ;** The array length must match the number of ports
 
-;var neopixel_brightness = {255,}
+;var neopixel_brightness = [255]
 
 ;** This is the output numbers for the DC motors
 ;** Used by M950. Change if you already have outputs setup
 ;** The array size must not be increased
 
-;set global.AFC_dcm_out_no = {0,1,2}
+;set global.AFC_dcm_out_no = [0,1,2]
 
 ;░█▀▄░█▀█░░░█▀█░█▀█░▀█▀░░░█▀▀░█▀▄░▀█▀░▀█▀░░░█▀█░█▀█░█▀▀░▀█▀░░░█░█░█▀▀░█▀▄░█▀▀░█░█░█
 ;░█░█░█░█░░░█░█░█░█░░█░░░░█▀▀░█░█░░█░░░█░░░░█▀▀░█▀█░▀▀█░░█░░░░█▀█░█▀▀░█▀▄░█▀▀░▀░▀░▀

@@ -1,0 +1,59 @@
+; ==========================================================================================
+; Lane - Set Backup
+; Infinite spool (P3-04): choose the lane that takes over when a lane runs out of filament during a print.
+; The filament-error handler then swaps the tool map so the same T number continues on the backup lane.
+; The backup lane must feed the same printer head (tool_and_motion[u][0]) and should hold the same filament.
+; param.A tool number of the lane, param.B tool number of the backup lane or -1 for none (both: no menus)
+; ==========================================================================================
+
+var unit_number = 0
+var lane_number = 0
+var backup_unit = 0
+var backup_lane = 0
+var backup_tool = -1
+
+if exists(param.A) && exists(param.B)
+    set var.unit_number = global.Tool_to_AFC[param.A][0]
+    set var.lane_number = global.Tool_to_AFC[param.A][1]
+    set var.backup_tool = param.B
+else
+    if #global.M291_data[0] != 1
+        M291 P"Select the Unit of the lane that will run out" K{global.M291_data[0]} S4 J2
+        if result == -1
+            M99
+        set var.unit_number = input
+    M291 P"Select the lane that will run out" K{global.M291_data[1][var.unit_number]} S4 J2
+    if result == -1
+        M99
+    set var.lane_number = input
+
+    if #global.M291_data[0] != 1
+        M291 P"Select the Unit of the backup lane" K{global.M291_data[0]} S4 J2
+        if result == -1
+            M99
+        set var.backup_unit = input
+    var names = global.M291_data[1][var.backup_unit] ^ ["No backup"]
+    M291 P"Select the backup lane" K{var.names} S4 J2
+    if result == -1
+        M99
+    if input < global.AFC_unit_total_lanes[var.backup_unit]
+        set var.backup_tool = global.AFC_lane_to_tool[var.backup_unit][input]
+
+if var.backup_tool >= #global.Tool_to_AFC
+    M291 P"That backup lane does not exist." R"Lane - Set Backup" S2
+    M99
+
+if var.backup_tool >= 0
+    if var.backup_tool == global.AFC_lane_to_tool[var.unit_number][var.lane_number]
+        M291 P"A lane cannot be its own backup." R"Lane - Set Backup" S2
+        M99
+    if global.tool_and_motion[var.unit_number][0] != global.tool_and_motion[global.Tool_to_AFC[var.backup_tool][0]][0]
+        M291 P"The backup lane feeds a different printer head." R"Lane - Set Backup" S2
+        M99
+
+set global.AFC_lane_backup[var.unit_number][var.lane_number] = var.backup_tool
+M98 P"0:/sys/AFC/Macros/save_status.g"
+if var.backup_tool >= 0
+    M291 P{"Unit "^var.unit_number^" Lane "^var.lane_number^" is backed up by tool "^var.backup_tool} R"Lane - Set Backup" S1 T3
+else
+    M291 P{"Unit "^var.unit_number^" Lane "^var.lane_number^" has no backup lane"} R"Lane - Set Backup" S1 T3

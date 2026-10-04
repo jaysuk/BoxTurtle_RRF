@@ -1,5 +1,5 @@
 ; ==========================================================================================
-; Mark Lane as Empty / Unloaded
+; Mark Lane as Loaded
 ; Manually resets the status flag of a lane to "False" and updates LEDs/Persistence.
 ; ==========================================================================================
 
@@ -22,7 +22,7 @@ else
     else
         set var.unit_number = 0
     
-    M291 P"Select the lane to mark as Empty" K{global.M291_data[1][var.unit_number]} S4 J1
+    M291 P"Select the lane to mark as Loaded" K{global.M291_data[1][var.unit_number]} S4 J1
     set var.lane_number = input
     set var.manual_trigger = true
 
@@ -36,7 +36,7 @@ if !global.AFC_lanes[var.unit_number][var.lane_number][0]
     ; Update Global Variable
     set global.AFC_lanes[var.unit_number][var.lane_number][0] = true
     
-    ; Update LEDs (Set to Red/Empty)
+    ; Update LEDs (Set to Green/Ready)
     set global.AFC_LED_array[var.unit_number][var.lane_number] = 1
     M98 P"0:/sys/AFC/Macros/leds.g"
     M400

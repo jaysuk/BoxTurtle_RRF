@@ -9,13 +9,22 @@
 ; param.H is the first layer min Y
 ; param.J is the first layer max Y
 ; param.K is the initial tool
+; param.L (optional) one character per tool, "1" = used, e.g. L"1011" (else the slicer's filament usage in the file header is used)
 
 var tool_number = param.K
-var unit_number = global.Tool_to_AFC[var.tool_number][0]                                              ; Get Unit ID
+var unit_number = global.AFC_tool_map[var.tool_number][0]                                              ; Get Unit ID
+var lane_number = global.AFC_tool_map[var.tool_number][1]                                              ; Get local Lane ID
 
 var length_filament_soak = 0
 
 set global.Machine_cancelled = false                                                ; reset the cancelled global value to false
+
+if exists(param.L)
+	M98 P"0:/sys/AFC/Macros/validate_job.g" L{param.L}								; check the lanes the job needs (loaded, measured, enough spool)
+else
+	M98 P"0:/sys/AFC/Macros/validate_job.g"
+if global.Machine_cancelled = true
+	abort "Print cancelled."
 
 set global.Gcode_bed_temp = param.A                                          ; this updates the global variable slicerBedTemp to be equal to param.A
 set global.Gcode_hotend_temp = param.C                                       ; this updates the global variable slicerHotendTemp to be equal to param.C
@@ -36,9 +45,9 @@ while iterations < var.length_filament_soak
 
 if global.Machine_cancelled = true                                                  ; allows print to be cancelled at this point
 	M291 P"Print has been cancelled" S0 T3
-		G4 S3
-		M291 P{"Aborting macro. Line "^line} R"0:/sys/start_print.g" S1
-		abort "Print cancelled."
+	G4 S3
+	M291 P{"Aborting macro. Line "^line} R"0:/sys/start_print.g" S1
+	abort "Print cancelled."
 else  
 	if !move.axes[global.Machine_axis_number[0]].homed || !move.axes[global.Machine_axis_number[1]].homed || !move.axes[global.Machine_axis_number[2]].homed
 		G28                                                                       ; home the printer
@@ -49,7 +58,7 @@ if global.Machine_cancelled = true                                              
 	M291 P{"Aborting macro. Line "^line} R"0:/sys/start_print.g" S1
 	abort "Print cancelled."
 
-set global.AFC_extruder_temp[var.unit_number][var.tool_number] = param.C
+set global.AFC_extruder_temp[var.unit_number][var.lane_number] = param.C
 
 T{param.K}
 

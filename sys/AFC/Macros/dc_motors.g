@@ -10,19 +10,24 @@ var SLP_pin=global.AFC_SLP_pins[var.unit_number][var.lane_number]  ; Get the Sle
 var DC1_pin=global.AFC_DC_pins[var.unit_number][var.lane_number][0]  ; Get the first logic pin for the motor driver
 var DC2_pin=global.AFC_DC_pins[var.unit_number][var.lane_number][1]  ; Get the second logic pin for the motor driver
 
-if param.A = "F" || param.A = "R"                   ; If the request is Forward or Reverse, we need to configure the pins
+if param.A = "F" || param.A = "R" || param.A = "O" ; Configure the pins first (also for Off, so M42 never hits an unassigned pin)
     M950 P{global.AFC_dcm_out_no[0]} C{var.SLP_pin} ; Configure Sleep/Enable pin to the logical P number defined in globals
-    M950 P{global.AFC_dcm_out_no[1]} C{var.DC1_pin} ; Configure Logic Pin 1 to the logical P number defined in globals
-    M950 P{global.AFC_dcm_out_no[2]} C{var.DC2_pin} ; Configure Logic Pin 2 to the logical P number defined in globals
+    if global.AFC_dc_speed < 1
+        ; Below full speed the two logic pins are PWM outputs; the one that is driven high carries the duty cycle
+        M950 P{global.AFC_dcm_out_no[1]} C{var.DC1_pin} Q{global.AFC_dc_freq}
+        M950 P{global.AFC_dcm_out_no[2]} C{var.DC2_pin} Q{global.AFC_dc_freq}
+    else
+        M950 P{global.AFC_dcm_out_no[1]} C{var.DC1_pin} ; Configure Logic Pin 1 to the logical P number defined in globals
+        M950 P{global.AFC_dcm_out_no[2]} C{var.DC2_pin} ; Configure Logic Pin 2 to the logical P number defined in globals
 
 if param.A = "F"                                    ; Logic for Forward motion
     M42 P{global.AFC_dcm_out_no[0]} S1              ; Set Sleep/Enable Pin HIGH (Enable Driver) using dynamic P index
     M42 P{global.AFC_dcm_out_no[1]} S0              ; Set Logic Pin 1 LOW using dynamic P index
-    M42 P{global.AFC_dcm_out_no[2]} S1              ; Set Logic Pin 2 HIGH using dynamic P index (Polarity for Forward)
+    M42 P{global.AFC_dcm_out_no[2]} S{global.AFC_dc_speed} ; Set Logic Pin 2 HIGH (duty cycle = AFC_dc_speed) using dynamic P index (Polarity for Forward)
 
 if param.A = "R"                                    ; Logic for Reverse motion
     M42 P{global.AFC_dcm_out_no[0]} S1              ; Set Sleep/Enable Pin HIGH (Enable Driver) using dynamic P index
-    M42 P{global.AFC_dcm_out_no[1]} S1              ; Set Logic Pin 1 HIGH using dynamic P index
+    M42 P{global.AFC_dcm_out_no[1]} S{global.AFC_dc_speed} ; Set Logic Pin 1 HIGH (duty cycle = AFC_dc_speed) using dynamic P index
     M42 P{global.AFC_dcm_out_no[2]} S0              ; Set Logic Pin 2 LOW using dynamic P index (Polarity for Reverse)
 
 if param.A = "O"                                    ; Logic for Off/Stop

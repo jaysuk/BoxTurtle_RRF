@@ -9,16 +9,14 @@
 
 if !exists(param.U) || !exists(param.L)
     M118 S"Error: Missing unit (U) or lane (L) parameter for spool_write.g"
-    M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/spool_write.g" S1
-    abort
+    M99                                                       ; never abort: this runs inside tool changes
 
 var spool_id = global.spool_active_data[param.U][param.L][0]
 
 ; If no spool is loaded (ID is -1), there is nothing to write.
 if var.spool_id == -1
     M118 S"Error: No spool loaded on this lane for spool_write.g"
-    M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/spool_write.g" S1
-    abort
+    M99                                                       ; never abort: this runs inside tool changes
 
 ; Re-construct the file line by line
 ; Data schema: {SpoolID, FilamentType, Color, Manufacturer, InitialLength, RemainingLength, DateFirstUsed, DateLastUsed, HexColor, Price, EmptyWeight, Density}
@@ -53,4 +51,4 @@ var payload = var.p_part1 ^ var.p_part2 ^ var.p_part3
 echo >>{"0:/spools/" ^ var.spool_id ^ ".g"} "set global.spool_load_temp = " ^ var.payload
 
 ; Update AFC_lanes with the type and color so DWC/other macros see it
-set global.AFC_lanes[param.U][param.L][4] = {global.spool_active_data[param.U][param.L][1], global.spool_active_data[param.U][param.L][2]}
+set global.AFC_lanes[param.U][param.L][4] = [global.spool_active_data[param.U][param.L][1], global.spool_active_data[param.U][param.L][2]]

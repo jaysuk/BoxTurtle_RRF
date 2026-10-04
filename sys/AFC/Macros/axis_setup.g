@@ -1,12 +1,12 @@
 ; This file is used to setup the axis for the lane of the BT
 ; param.A is the tool number
-
-M584 P{#move.axes}                                                     ; Set the visible axes to the current count
+; Leaves 'f hidden; lane_motion_begin.g unhides it.
 
 if !exists(param.A)                                                    ; Check if the required parameter A (Tool Number) exists
-    M118 S"Missing the A parameter for the tool number"                 ; Error message
-    M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/axis_setup.g" S1
-    abort                                                              ; Stop macro execution
+    M98 P"0:/sys/AFC/Macros/afc_error.g" S"axis_setup.g: missing the tool number (A)" Q1
+    M99
+
+M584 P{#move.axes}                                                     ; Set the visible axes to the current count
 
 var tool_number = param.A                                              ; Assign parameter to local variable for cleaner syntax
 var unit_number = global.Tool_to_AFC[var.tool_number][0]

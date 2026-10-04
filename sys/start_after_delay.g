@@ -37,7 +37,7 @@ if !exists(global.Machine_cancelled)
 	
 ; NOTE: There will be a delay between setting this global to true and the macro/print cancelling
 ; as it may be called during a G4 wait commmand and can't be activated on until that finishes.
-; To use, either send "set global.Cancelled = true" from the command line or a macro, or set up a button with an associated trigger.
+; To use, either send "set global.Machine_cancelled = true" from the command line or a macro, or set up a button with an associated trigger.
 ; A separate macro may be hard to execute when the loop timer gets down to 5 or 1 seconds.
  
 var FileName = "No file selected"
@@ -96,11 +96,11 @@ else
  
 var Loops = 0 ; used if a testing parameter X is passed in order to exit after number of loops has expired
  
-M118 S"Print start time is " ^ var.RunTime
+M118 S{"Print start time is " ^ var.RunTime}
  
 while state.time < var.RunTime
-	if exists(global.Cancelled)
-		if global.Cancelled = true 
+	if exists(global.Machine_cancelled)
+		if global.Machine_cancelled = true 
 			M291 P"Operation has been cancelled" S0 T3
 			G4 S3
 			M291 P{"Aborting macro. Line "^line} R"0:/sys/start_after_delay.g" S1

@@ -47,7 +47,7 @@ while iterations < 100
         set var.spool_count = var.spool_count + 1
 
 ; Clear the temporary load variable so no ghost data is left behind
-set global.spool_load_temp = {-1, "", "", "", 0.0, 0.0, "", "", "", 0.0, 0.0, 1.24}
+set global.spool_load_temp = global.spool_empty_record
 
 if var.spool_count == 0
     M118 S"No spool files found on the SD card."

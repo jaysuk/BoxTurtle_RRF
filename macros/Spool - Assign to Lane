@@ -14,19 +14,17 @@ if exists(param.A) && exists(param.B)
 else
     ; 1b. Select Unit
     if #global.M291_data[0] != 1
-        M291 P"Select the Unit" K{global.M291_data[0]} S4 J1
-        if input == -1
-            M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Assign to Lane" S1
-            abort
+        M291 P"Select the Unit" K{global.M291_data[0]} S4 J2
+        if result == -1                                                                ; cancelled
+            M99
         set var.unit_number = input
     else
         set var.unit_number = 0
 
     ; 2b. Select Lane
-    M291 P"Select the lane to assign a spool to" K{global.M291_data[1][var.unit_number]} S4 J1
-    if input == -1
-        M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Assign to Lane" S1
-        abort
+    M291 P"Select the lane to assign a spool to" K{global.M291_data[1][var.unit_number]} S4 J2
+    if result == -1                                                                ; cancelled
+        M99
     set var.lane_number = input
 
 ; Check if the lane is actually loaded with filament
@@ -49,10 +47,9 @@ if var.spool_count == 0
     M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Assign to Lane" S1
     abort
 
-M291 P{"Enter Spool ID for this lane. Current Spools: " ^ var.spool_list} R"Assign Spool" S5 J1
-if input == -1
-    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Assign to Lane" S1
-    abort
+M291 P{"Enter Spool ID for this lane. Current Spools: " ^ var.spool_list} R"Assign Spool" S5 J2
+if result == -1                                                                ; cancelled
+    M99
 set var.spool_id = input
 
 ; Check if this spool ID is already assigned to another lane
@@ -62,7 +59,7 @@ var check_l = 0
 while var.check_u < #global.AFC_unit_CAN_ids
     set var.check_l = 0
     while var.check_l < global.AFC_unit_total_lanes[var.check_u]
-        if global.spoolman[var.check_u][var.check_l][0] == var.spool_id
+        if global.spool_tracking[var.check_u][var.check_l][0] == var.spool_id
             M291 P{"Spool " ^ var.spool_id ^ " is already assigned to Unit " ^ var.check_u ^ " Lane " ^ var.check_l ^ ". Please unassign it first or select a different Spool ID."} R"Duplicate Spool" S2
             M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Assign to Lane" S1
             abort
@@ -99,13 +96,15 @@ if global.spool_active_data[var.unit_number][var.lane_number][6] == "" && state.
     set global.spool_active_data[var.unit_number][var.lane_number][6] = state.time
 
 ; 7. Sync standard AFC properties
-;set global.AFC_lanes[var.unit_number][var.lane_number][4] = {global.spool_active_data[var.unit_number][var.lane_number][1], global.spool_active_data[var.unit_number][var.lane_number][2]}
+set global.AFC_lanes[var.unit_number][var.lane_number][4] = [global.spool_active_data[var.unit_number][var.lane_number][1], global.spool_active_data[var.unit_number][var.lane_number][2]]
 
-; 8. Set Spoolman Integration Stub (kept for backwards config compatibility)
-set global.spoolman[var.unit_number][var.lane_number] = {var.spool_id, global.spoolman[var.unit_number][var.lane_number][1]}
+set global.AFC_lane_hex[var.unit_number][var.lane_number] = global.spool_active_data[var.unit_number][var.lane_number][8]   ; the LED shows the spool's colour
+
+; 8. Record the assignment (persisted in Status/spool_status.g)
+set global.spool_tracking[var.unit_number][var.lane_number] = [var.spool_id, global.spool_tracking[var.unit_number][var.lane_number][1]]
 
 ; 9. Clear the temporary load variable
-set global.spool_load_temp = {-1, "", "", "", 0.0, 0.0, "", "", "", 0.0, 0.0, 1.24}
+set global.spool_load_temp = global.spool_empty_record
 
 M98 P"0:/sys/AFC/Macros/save_status.g"
 

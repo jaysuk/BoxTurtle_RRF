@@ -1,72 +1,45 @@
-; === AFC Filament Load/Detection Macro (RepRapFirmware G-Code) ===
+; === AFC Filament Insert Macro (called by the generated trigger<N>.g when filament is inserted into a lane) ===
+; Runs only while NOT printing (the lane triggers are M581 R2). Feeds the filament to the load switch, marks the lane as
+; loaded and moves it to the park position (stored first length).
 
 ; --- Macro Parameters ---
-; param.A - This is the lane number (0, 1, 2, 3, etc.) passed when the macro is called.
-
-; --- AFC Feature Flags (Reference) ---
-; 0 = brush
-; 1 = cut
-; 2 = kick
-; 3 = park
-; 4 = poop
-; 5 = purge
-; 6 = load
-; 7 = startup check
-; 8 = use the dc motor on unload
-; 9 = unload method
-; 10 = spoolman support
+; param.A - tool number of the lane that triggered
 
 ; --- Parameter Validation ---
-if !exists(param.A)                                                                                           ; Check if the required 'A' parameter (tool number) was passed to the macro.
-    M118 S"Missing the Tool number"                                                                            ; Report the error.
-    M291 P{"Aborting macro. Line "^line} R"0:/sys/AFC/Macros/triggers.g" S1
-    abort                                                                                                     ; Stop macro execution if the parameter is missing.
+if !exists(param.A)
+    M98 P"0:/sys/AFC/Macros/afc_error.g" S"triggers.g: missing the tool number (A)"
+    M99
 
-var tool_number = param.A                                                                                       ; Assign the input parameter to a local variable for easier use.
+var tool_number = param.A
 var unit_number = global.Tool_to_AFC[var.tool_number][0]
 var lane_number = global.Tool_to_AFC[var.tool_number][1]
+var search_distance = 300                                                                                       ; Max distance to push the filament while looking for the load switch
 
 ; --- Axis Setup ---
-; Call a sub-macro to configure the motor associated with the current lane as a temporary axis (likely 'F').
-M98 P"0:/sys/AFC/Macros/axis_setup.g" A{var.tool_number}
-
-M584 P{#move.axes} 
-if global.AFC_mainboard[var.unit_number] == 1
-    while iterations < global.AFC_unit_total_lanes[var.unit_number]
-        M581 P{global.AFC_trigger_input_numbers[var.unit_number][iterations]} R-1 T{global.AFC_trigger_numbers[var.unit_number][iterations]}
-        M950 J{global.AFC_trigger_input_numbers[var.unit_number][iterations]} C"nil" 
+; Maps the lane motor to 'f, unhides it and (Longboi) disarms the lane triggers while we move.
+M98 P"0:/sys/AFC/Macros/lane_motion_begin.g" A{var.tool_number}
 
 ; --- Filament Detection Routine ---
-; M574: Define endstop configuration for the temporary axis ('f').
-M574 'f1 P{global.AFC_load_switch[var.unit_number][var.lane_number]} S1                                                        ; Assign the physical pin (P) for the filament load switch of the current lane to the 'F' axis, using active-low/normal switch mode (S1).
-G92 'f0                                                                                                       ; Set the current position of the temporary 'F' axis to 0.
-if !sensors.endstops[{global.Machine_om_axis_number}].triggered                                                       ; Check if the filament is already triggering the endstop. OM = Other Motor/Temporary Axis.
-    G1 H1 'f500 F2100
-    G92 'f0                                                                                                   ; If not triggered, perform a homing move (G28) on the 'F' axis (motor feeds filament) until the switch is hit.
-    if sensors.endstops[{global.Machine_om_axis_number}].triggered                                                    ; Check if the homing move successfully found the filament (switch triggered).
-                                                                                                              ; --- Filament Detected: Update Status ---
-        set global.AFC_lanes[var.unit_number][var.lane_number][0] = true                                                    ; Set the global flag that this lane is loaded.
-        
-         
-                                                                                                              ; --- Optional Filament Retract/Pre-positioning ---
+; The lane's load switch is the 'f min endstop.
+M574 'f1 P{global.AFC_load_switch[var.unit_number][var.lane_number]} S1
+G92 'f0                                                                                                         ; Position is relative to where the filament is now
+if !sensors.endstops[global.AFC_f_axis].triggered                                                               ; Filament is not on the switch yet: push it forward until it is
+    G1 H1 'f{var.search_distance} F{global.AFC_load_retract_speed[var.unit_number][0]*60}
+    M400
+    G92 'f0
 
-        if global.AFC_lanes[var.unit_number][var.lane_number][1] !== 0                                           ; If a previous first-load length is recorded (meaning filament was fully loaded once).
-                                                                                                            ; G1: Perform an absolute move to retract the filament to the known "first length" position.
-            G1 'f{global.AFC_lanes[var.unit_number][var.lane_number][1]} F{global.AFC_load_retract_speed[var.unit_number][0]*60} ; Move the filament back to a calculated parking position.
-        M400
-         
-                                                                                                              ; --- LED Update ---
-        set global.AFC_LED_array[var.unit_number][var.lane_number] = 1                                                         ; Set the LED array state for this lane (1 likely means filament present/ready).
-        M98 P"0:/sys/AFC/Macros/leds.g"                                                                             ; Execute the macro to update the physical LED lights.
-        M98 P"0:/sys/AFC/Macros/save_status.g"
-M400                                                                                                          ; Wait for all movement/commands to finish.
+if sensors.endstops[global.AFC_f_axis].triggered                                                                ; Filament is on the load switch (it was there already, or the search found it)
+    set global.AFC_lanes[var.unit_number][var.lane_number][0] = true                                            ; Mark the lane as loaded.
+    if global.AFC_lanes[var.unit_number][var.lane_number][1] != 0                                               ; A first length is recorded: move to the park position.
+        G1 'f{global.AFC_lanes[var.unit_number][var.lane_number][1]} F{global.AFC_load_retract_speed[var.unit_number][0]*60}
+    M400
+    set global.AFC_LED_array[var.unit_number][var.lane_number] = 1                                              ; Green = loaded and ready
+    M98 P"0:/sys/AFC/Macros/leds.g"
+    M98 P"0:/sys/AFC/Macros/save_status.g"
+else
+    M118 S{"Unit "^var.unit_number^" Lane "^var.lane_number^": the filament did not reach the load switch within "^var.search_distance^"mm. Check the filament and the switch"}
+M400
 
 ; --- Cleanup ---
-M574 'f1 P"nil" S1                                                                                            ; Disable the endstop for the temporary
-M400
-M18 'f
-M584 P{#move.axes - 1} 
-if global.AFC_mainboard[var.unit_number] == 1
-    while iterations < global.AFC_unit_total_lanes[var.unit_number]
-        M950 J{global.AFC_trigger_input_numbers[var.unit_number][iterations]} C{global.AFC_prep_switch[var.unit_number][iterations]}
-        M581 P{global.AFC_trigger_input_numbers[var.unit_number][iterations]} R2 T{global.AFC_trigger_numbers[var.unit_number][iterations]} S1
+M18 'f                                                                                                          ; Release the lane motor
+M98 P"0:/sys/AFC/Macros/lane_motion_end.g" A{var.tool_number}                                                   ; Free the endstop, hide 'f, re-arm the triggers

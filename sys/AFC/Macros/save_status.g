@@ -1,37 +1,39 @@
 ; param.A is used to identify tfree.g
 
-var v0 = false
-var v1 = 0
-var v2 = 0
-var v3 = 0
-var v4 = ""
-var v5 = ""
 var cU = 0
 var cL = 0
-var string = ""
 var filename = "0:/sys/AFC/Status/status.g"
-var unit_number = 0
-var lane_number = 0
 
-echo >{var.filename} "; This records the status of each lane"                                                                                                 ; Overwrite/start the lane status file.
+; One line per lane / unit. RRF 3.7 prints arrays as [..] with quoted strings, so no manual quoting is needed - but a string
+; with a double quote inside would break the file (embedded quotes are not escaped), so the macros that accept text reject them.
+echo >{var.filename} "; This records the status of each lane"
 while iterations < #global.AFC_unit_CAN_ids
     set var.cU = iterations
     set var.cL = 0
-    while var.cL <  global.AFC_unit_total_lanes[var.cU]
-        set var.v0 = global.AFC_lanes[var.cU][var.cL][0]
-        set var.v1 = global.AFC_lanes[var.cU][var.cL][1]
-        set var.v2 = global.AFC_lanes[var.cU][var.cL][2]
-        set var.v3 = global.AFC_lanes[var.cU][var.cL][3]
-        set var.v4 = global.AFC_lanes[var.cU][var.cL][4][0]
-        set var.v5 = global.AFC_lanes[var.cU][var.cL][4][1]
-        echo >>{var.filename} "set global.AFC_lanes["^var.cU^"]["^var.cL^ "] = {"^var.v0^","^var.v1^","^var.v2^","^var.v3^",{"""^var.v4^""","""^var.v5^"""}}" ; Save the updated loaded status array to the file.
+    while var.cL < global.AFC_unit_total_lanes[var.cU]
+        echo >>{var.filename} "set global.AFC_lanes["^var.cU^"]["^var.cL^"] = ", global.AFC_lanes[var.cU][var.cL]
         set var.cL = var.cL + 1
-if #global.AFC_unit_CAN_ids == 1
-    echo >>{var.filename} "set global.AFC_LED_array[0] = " ^ global.AFC_LED_array[0]
-else
-    echo >>{var.filename} "set global.AFC_LED_array = " ^ global.AFC_LED_array
+while iterations < #global.AFC_unit_CAN_ids
+    echo >>{var.filename} "set global.AFC_LED_array["^iterations^"] = ", global.AFC_LED_array[iterations]
+; Record which tool is loaded (-1 = none). The boot check (boot_check.g) asks the user what to do with it; nothing is
+; reselected silently. While that check is still pending the value restored at boot is kept.
+if !global.AFC_boot_check_pending
+    if move.motionSystems[0].currentTool != -1 && !exists(param.A)
+        set global.AFC_loaded_tool = move.motionSystems[0].currentTool
+    else
+        set global.AFC_loaded_tool = -1
+echo >>{var.filename} "set global.AFC_loaded_tool = " ^ global.AFC_loaded_tool
+; Tool -> lane map and infinite-spool backups: one line per tool / lane (each stays far below the 255 character line limit)
+while iterations < #global.AFC_tool_map
+    echo >>{var.filename} "set global.AFC_tool_map["^iterations^"] = ", global.AFC_tool_map[iterations]
+while iterations < #global.AFC_unit_CAN_ids
+    set var.cU = iterations
+    while iterations < global.AFC_unit_total_lanes[var.cU]
+        echo >>{var.filename} "set global.AFC_lane_backup["^var.cU^"]["^iterations^"] = "^global.AFC_lane_backup[var.cU][iterations]
+; Filament colours ("#RRGGBB" strings written with doubled quotes so the file reads back as strings)
+while iterations < #global.AFC_unit_CAN_ids
+    set var.cU = iterations
+    while iterations < global.AFC_unit_total_lanes[var.cU]
+        echo >>{var.filename} "set global.AFC_lane_hex["^var.cU^"]["^iterations^"] = """^global.AFC_lane_hex[var.cU][iterations]^""""
 ; Hand off Spool ID persistence to its dedicated macro to prevent array flattening
-if state.currentTool != -1 && !exists(param.A)
-    echo >>{var.filename} "T" ^state.currentTool^" P0"
-    echo >>{var.filename} "M98 P""0:/sys/AFC/Macros/tool_load_no_files.g"" A"^state.currentTool
 M98 P"0:/sys/AFC/Macros/spool_save_status.g"

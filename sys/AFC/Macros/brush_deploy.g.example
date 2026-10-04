@@ -1,3 +1,4 @@
+; EXAMPLE ONLY - this is the author's machine (U axis brush). Copy to brush_deploy.g in this folder and edit it for your printer.
 ; === AFC Brush Deploy Macro (RepRapFirmware G-Code) ===
 
 ; --- Variable Initialization ---

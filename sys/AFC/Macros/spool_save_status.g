@@ -13,11 +13,11 @@ echo >"0:/sys/AFC/Status/spool_status.g" "; Automatically generated spool assign
 while var.unit_idx < #global.AFC_unit_CAN_ids
     set var.lane_idx = 0
     while var.lane_idx < global.AFC_unit_total_lanes[var.unit_idx]
-        set var.current_id = global.spoolman[var.unit_idx][var.lane_idx][0]
+        set var.current_id = global.spool_tracking[var.unit_idx][var.lane_idx][0]
         
         ; Write complete inner array assignment rather than deep indexing
-        ; e.g., set global.spoolman[0][0] = {42, false}
-        echo >>"0:/sys/AFC/Status/spool_status.g" "set global.spoolman[" ^ var.unit_idx ^ "][" ^ var.lane_idx ^ "] = {" ^ var.current_id ^ ", " ^ global.spoolman[var.unit_idx][var.lane_idx][1] ^ "}"
+        ; e.g., set global.spool_tracking[0][0] = [42,false]
+        echo >>"0:/sys/AFC/Status/spool_status.g" "set global.spool_tracking[" ^ var.unit_idx ^ "][" ^ var.lane_idx ^ "] = ", global.spool_tracking[var.unit_idx][var.lane_idx]
         
         set var.lane_idx = var.lane_idx + 1
     

@@ -22,10 +22,9 @@ if var.spool_count == 0
     abort
 
 ; 2. Enter Spool ID
-M291 P{"Enter Spool ID to permanently delete. Current Spools: " ^ var.spool_list} R"Delete Spool" S5 J1
-if input == -1
-    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Delete" S1
-    abort
+M291 P{"Enter Spool ID to permanently delete. Current Spools: " ^ var.spool_list} R"Delete Spool" S5 J2
+if result == -1                                                                ; cancelled
+    M99
 set var.spool_id = input
 
 ; 3. Check if spool file exists
@@ -42,7 +41,7 @@ var check_l = 0
 while var.check_u < #global.AFC_unit_CAN_ids
     set var.check_l = 0
     while var.check_l < global.AFC_unit_total_lanes[var.check_u]
-        if global.spoolman[var.check_u][var.check_l][0] == var.spool_id
+        if global.spool_tracking[var.check_u][var.check_l][0] == var.spool_id
             M291 P{"Cannot delete Spool " ^ var.spool_id ^ " because it is currently assigned to Unit " ^ var.check_u ^ " Lane " ^ var.check_l ^ ". Please unassign the spool first."} R"Delete Blocked" S2
             M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Delete" S1
             abort
@@ -51,9 +50,6 @@ while var.check_u < #global.AFC_unit_CAN_ids
 
 ; 5. Confirm Deletion
 M291 P{"Are you absolutely sure you want to permanently delete Spool " ^ var.spool_id ^ "? This cannot be undone."} R"Confirm Delete" S3
-if input == -1
-    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Delete" S1
-    abort
 
 ; 6. Delete the file using RRF M30 command
 M30 {var.spool_file}

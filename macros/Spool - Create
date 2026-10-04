@@ -23,10 +23,9 @@ if var.spool_count == 0
     set var.spool_list = "None"
 
 ; 1. Enter Spool ID
-M291 P{"Enter a unique ID for the new spool. Existing Spools: " ^ var.spool_list} R"Create Spool" S5 J1
-if input == -1
-    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Create" S1
-    abort
+M291 P{"Enter a unique ID for the new spool. Existing Spools: " ^ var.spool_list} R"Create Spool" S5 J2
+if result == -1                                                                ; cancelled
+    M99
 set var.new_id = input
 
 if fileexists("0:/spools/" ^ var.new_id ^ ".g")
@@ -63,18 +62,21 @@ if input == null
 var hex_color = input
 
 ; 6. Enter Length
-M291 P"Enter the entire length of the spool in mm (1kg PLA is ~330000mm):" R"Create Spool" S5 J1
-if input == -1
-    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Create" S1
-    abort
+M291 P"Enter the entire length of the spool in mm (1kg PLA is ~330000mm):" R"Create Spool" S5 J2
+if result == -1                                                                ; cancelled
+    M99
 set var.initial_length = input
 
 ; 7. Enter Density
-M291 P"Enter the material density in g/cm3 (PLA: 1.24):" R"Create Spool" S5 J1
-if input == -1
-    M291 P{"Aborting macro. Line "^line} R"0:/macros/Spool - Create" S1
-    abort
+M291 P"Enter the material density in g/cm3 (PLA: 1.24):" R"Create Spool" S5 J2
+if result == -1                                                                ; cancelled
+    M99
 var density = input
+
+; A double quote inside a text field would break the spool file and the status file
+if find(var.type, """") != -1 || find(var.color, """") != -1 || find(var.manuf, """") != -1 || find(var.hex_color, """") != -1
+    M291 P"Double quotes are not allowed in the text fields." R"Create Spool" S2
+    M99
 
 ; 6. (Directory must already exist at 0:/spools)
 

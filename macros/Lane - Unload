@@ -1,17 +1,7 @@
 ; param.A - This has been added to allow BtnCMD to call this macro for a specific lane
 
-; AFC Feature Numbers
-; 0 = brush
-; 1 = cut
-; 2 = kick
-; 3 = park
-; 4 = poop
-; 5 = purge
-; 6 = load
-; 7 = startup check
-; 8 = use the dc motor on unload
-; 9 = unload method
-; 10 = spoolman support
+; Machine_features: 0 brush, 1 cut, 2 kick, 3 park, 4 poop, 5 purge, 6 start check, 7 spool tracking, 8 initial unload
+; AFC_features[unit]: 0 use DC motor, 1 unload method (0 hub switch, 1 lengths), 2 load method (0 turtleneck, 1 lengths, 2 preload switch)
 
 var lane_number = 0
 var tool_number = 0

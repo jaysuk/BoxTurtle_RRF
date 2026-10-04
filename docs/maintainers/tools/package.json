@@ -1,0 +1,14 @@
+{
+  "name": "boxturtle-rrf-tools",
+  "private": true,
+  "type": "module",
+  "description": "Maintainer tooling: lint the BoxTurtle_RRF macros with dwc-gcode-core (RRF-source-verified G-code dictionary, object-model schema and meta-command structure checks).",
+  "scripts": {
+    "lint": "node lint.mjs",
+    "scan": "node scan.mjs 3.6.3 3.7.0-rc.2",
+    "cmd": "node cmd.mjs"
+  },
+  "dependencies": {
+    "dwc-gcode-core": "^1.36.0"
+  }
+}

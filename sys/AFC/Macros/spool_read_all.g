@@ -1,6 +1,6 @@
 ; ==========================================================================================
 ; Spool - Read All (spool_read_all.g)
-; Iterates through global.spoolman on system startup and loads the active spool files
+; Iterates through global.spool_tracking on system startup and loads the active spool files
 ; into global.spool_active_data to restore tracking state across reboots.
 ; ==========================================================================================
 
@@ -17,7 +17,7 @@ while var.unit_idx < #global.AFC_unit_CAN_ids
     while var.lane_idx < global.AFC_unit_total_lanes[var.unit_idx]
         
         ; Check if this lane has a Spool assigned in the persistence stub
-        set var.current_id = global.spoolman[var.unit_idx][var.lane_idx][0]
+        set var.current_id = global.spool_tracking[var.unit_idx][var.lane_idx][0]
         
         if var.current_id != -1
             set var.spool_file = "0:/spools/" ^ var.current_id ^ ".g"
@@ -41,11 +41,11 @@ while var.unit_idx < #global.AFC_unit_CAN_ids
                 set global.spool_active_data[var.unit_idx][var.lane_idx][10] = global.spool_load_temp[10]
                 set global.spool_active_data[var.unit_idx][var.lane_idx][11] = global.spool_load_temp[11]
                 ; Sync standard AFC properties
-                set global.AFC_lanes[var.unit_idx][var.lane_idx][4] = {global.spool_active_data[var.unit_idx][var.lane_idx][1], global.spool_active_data[var.unit_idx][var.lane_idx][2]}
+                set global.AFC_lanes[var.unit_idx][var.lane_idx][4] = [global.spool_active_data[var.unit_idx][var.lane_idx][1], global.spool_active_data[var.unit_idx][var.lane_idx][2]]
         
         set var.lane_idx = var.lane_idx + 1
         
     set var.unit_idx = var.unit_idx + 1
 
 ; Clear the temporary load variable
-set global.spool_load_temp = {-1, "", "", "", 0.0, 0.0, "", "", "", 0.0, 0.0, 1.24}
+set global.spool_load_temp = global.spool_empty_record

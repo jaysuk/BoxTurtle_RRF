@@ -1,0 +1,63 @@
+; ==========================================================================================
+; Lane - Map Tool
+; Tool -> lane mapping (P3-03): choose which physical lane an RRF tool (the T numbers in the slicer) draws from.
+; The tool that currently uses the chosen lane gets this tool's old lane (a swap). Both lanes must serve the same
+; printer head. A tool that is loaded in the toolhead cannot be remapped (select T-1 first).
+; param.A tool number, param.B unit, param.C lane  (all three: map without menus, e.g. from a button)
+; ==========================================================================================
+
+var tool_number = 0
+var unit_number = 0
+var lane_number = 0
+var choice = 0
+var n = #global.AFC_tool_map
+var text = ""
+var names = vector(#global.AFC_tool_map, "T")
+var errors = global.AFC_error_count
+
+if exists(param.A) && exists(param.B) && exists(param.C)
+    M98 P"0:/sys/AFC/Macros/tool_map_swap.g" A{param.A} B{global.AFC_lane_to_tool[param.B][param.C]}
+    M99
+
+M291 P"Tool to lane mapping" R"Lane - Map Tool" K{"Map a tool to a lane", "Show the mapping", "Reset to default"} S4 J2
+if result == -1
+    M99
+set var.choice = input
+
+if var.choice == 1                                                              ; Show the mapping
+    while iterations < var.n
+        set var.text = var.text ^ "T" ^ iterations ^ ":U" ^ global.AFC_tool_map[iterations][0] ^ "L" ^ global.AFC_tool_map[iterations][1] ^ "  "
+    M291 P{var.text} R"Tool -> lane (Unit, Lane)" S2
+    M99
+
+if var.choice == 2                                                              ; Reset to default
+    if move.motionSystems[0].currentTool != -1
+        M291 P"Select T-1 first: a loaded tool cannot be remapped." R"Lane - Map Tool" S2
+        M99
+    while iterations < var.n
+        set global.AFC_tool_map[iterations] = global.Tool_to_AFC[iterations]
+    M98 P"0:/sys/AFC/Macros/save_status.g"
+    M291 P"Every tool uses its own lane again." R"Lane - Map Tool" S1 T3
+    M99
+
+; --- Map a tool to a lane ---
+while iterations < var.n
+    set var.names[iterations] = "T" ^ iterations
+M291 P"Select the tool" R"Lane - Map Tool" K{var.names} S4 J2
+if result == -1
+    M99
+set var.tool_number = input
+
+if #global.M291_data[0] != 1
+    M291 P"Select the Unit of the lane" K{global.M291_data[0]} S4 J2
+    if result == -1
+        M99
+    set var.unit_number = input
+M291 P{"Select the lane that tool "^var.tool_number^" should use"} K{global.M291_data[1][var.unit_number]} S4 J2
+if result == -1
+    M99
+set var.lane_number = input
+
+M98 P"0:/sys/AFC/Macros/tool_map_swap.g" A{var.tool_number} B{global.AFC_lane_to_tool[var.unit_number][var.lane_number]}
+if global.AFC_error_count == var.errors
+    M291 P{"Tool "^var.tool_number^" now uses Unit "^global.AFC_tool_map[var.tool_number][0]^" Lane "^global.AFC_tool_map[var.tool_number][1]} R"Lane - Map Tool" S1 T3

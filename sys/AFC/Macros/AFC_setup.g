@@ -24,5 +24,5 @@ while iterations < var.tl
     M950 J{global.AFC_trigger_input_numbers[var.unit_number][iterations]} C{global.AFC_prep_switch[var.unit_number][iterations]}           ; Configure digital input for each Lane Prep Switch
 
     ; M581 configures the external triggers for the four lanes.
-    ; Px: Trigger number 0-3. R2: Run on rising edge (switch actuation). Sx: Enable/Disable trigger.
+    ; Px: Trigger number 0-3. R2: only fire while NOT printing (RRF does not run R2 triggers during a pause either). S1: on the rising edge of the input.
     M581 P{global.AFC_trigger_input_numbers[var.unit_number][iterations]} R2 T{global.AFC_trigger_numbers[var.unit_number][iterations]} S1 ; Lane triggerx.g  ; This sets up the lane trigger
